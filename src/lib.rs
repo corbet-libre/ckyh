@@ -318,11 +318,10 @@ impl<S: CredentialStore> Passkeys<S> {
                 {
                     return Err(Error::CounterRegression);
                 }
-                if record.backup_eligible && !verified.backup_eligible() {
+                if record.backup_eligible != verified.backup_eligible() {
                     return Err(Error::VerificationFailed);
                 }
                 record.counter = verified.counter();
-                record.backup_eligible = verified.backup_eligible();
                 record.backup_state = verified.backup_state();
                 Ok(Authentication::new(
                     self.community.clone(),

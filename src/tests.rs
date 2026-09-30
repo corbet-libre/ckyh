@@ -819,42 +819,98 @@ fn validly_signed_missing_presence_is_rejected() {
     );
 }
 
+fn setup_backup_eligible() -> (Passkeys<MemoryStore>, SoftToken) {
+    let server = service(MemoryStore::default(), "one");
+    let mut token = token();
+    let (challenge, pending) = server.start_registration(MEMBER).unwrap();
+    let mut response = registration(&mut token, challenge, ORIGIN);
+    let Value::Map(mut envelope) =
+        serde_cbor_2::from_slice(response.response.attestation_object.as_ref()).unwrap()
+    else {
+        panic!("attestation must be a map");
+    };
+    envelope.insert(Value::Text("fmt".into()), Value::Text("none".into()));
+    envelope.insert(Value::Text("attStmt".into()), Value::Map(BTreeMap::new()));
+    let Value::Bytes(data) = envelope.get_mut(&Value::Text("authData".into())).unwrap() else {
+        panic!("authenticator data must be bytes");
+    };
+    data[32] |= 0x08;
+    response.response.attestation_object =
+        serde_cbor_2::to_vec(&Value::Map(envelope)).unwrap().into();
+    let record = server
+        .finish_registration(pending, &response, month())
+        .unwrap();
+    assert!(record.backup_eligible);
+    (server, token)
+}
+
+fn signed_flags(token: &SoftToken, response: &mut PublicKeyCredential, flags: u8) {
+    let mut data = response.response.authenticator_data.as_ref().to_vec();
+    data[32] = flags;
+    response.response.authenticator_data = data.into();
+    resign(token, response);
+}
+
 #[test]
 fn backup_state_updates_survive_storage_round_trip() {
+    let (server, mut token) = setup_backup_eligible();
+    for flags in [0x0d, 0x1d, 0x0d] {
+        let (challenge, pending) = server.start_authentication(MEMBER).unwrap();
+        let mut response = assertion(&mut token, challenge, ORIGIN);
+        signed_flags(&token, &mut response, flags);
+        server.finish_authentication(pending, &response).unwrap();
+        let value = serde_json::to_value(&server.list(MEMBER).unwrap()[0]).unwrap();
+        let decoded: StoredPasskey = serde_json::from_value(value).unwrap();
+        assert!(decoded.backup_eligible);
+        assert_eq!(decoded.backup_state, flags & 0x10 != 0);
+    }
+}
+
+#[test]
+fn backup_eligibility_is_immutable_even_with_overlapping_ceremonies() {
+    for eligible in [false, true] {
+        let (server, mut token) = if eligible {
+            setup_backup_eligible()
+        } else {
+            let (server, token, _) = setup();
+            (server, token)
+        };
+        let (bad_challenge, bad_pending) = server.start_authentication(MEMBER).unwrap();
+        let (good_challenge, good_pending) = server.start_authentication(MEMBER).unwrap();
+        let mut bad = assertion(&mut token, bad_challenge, ORIGIN);
+        signed_flags(&token, &mut bad, if eligible { 0x05 } else { 0x0d });
+        let before = serde_json::to_value(server.list(MEMBER).unwrap()).unwrap();
+        assert_eq!(
+            server.finish_authentication(bad_pending, &bad).unwrap_err(),
+            Error::VerificationFailed
+        );
+        assert_eq!(
+            serde_json::to_value(server.list(MEMBER).unwrap()).unwrap(),
+            before
+        );
+        let mut good = assertion(&mut token, good_challenge, ORIGIN);
+        signed_flags(&token, &mut good, if eligible { 0x1d } else { 0x05 });
+        server.finish_authentication(good_pending, &good).unwrap();
+        assert_eq!(server.list(MEMBER).unwrap()[0].backup_eligible, eligible);
+    }
+}
+
+#[test]
+fn backed_up_without_eligibility_is_rejected_without_mutation() {
     let (server, mut token, _) = setup();
-    // Upstream 0.5.5 rejects a simultaneous transition from ineligible to already
-    // backed up. Preserve that rejection; eligibility must change first.
     let (challenge, pending) = server.start_authentication(MEMBER).unwrap();
     let mut response = assertion(&mut token, challenge, ORIGIN);
-    let mut data = response.response.authenticator_data.as_ref().to_vec();
-    data[32] = 0x1d;
-    response.response.authenticator_data = data.into();
-    resign(&token, &mut response);
+    signed_flags(&token, &mut response, 0x15);
+    let before = serde_json::to_value(server.list(MEMBER).unwrap()).unwrap();
     assert_eq!(
         server
             .finish_authentication(pending, &response)
             .unwrap_err(),
         Error::VerificationFailed
     );
-    for flags in [0x0d, 0x1d, 0x0d] {
-        let (challenge, pending) = server.start_authentication(MEMBER).unwrap();
-        let mut response = assertion(&mut token, challenge, ORIGIN);
-        let mut data = response.response.authenticator_data.as_ref().to_vec();
-        data[32] = flags;
-        response.response.authenticator_data = data.into();
-        resign(&token, &mut response);
-        server.finish_authentication(pending, &response).unwrap();
-        let value = serde_json::to_value(&server.list(MEMBER).unwrap()[0]).unwrap();
-        assert_eq!(value["backup_eligible"], true);
-        assert_eq!(value["backup_state"], flags & 0x10 != 0);
-    }
-    let (challenge, pending) = server.start_authentication(MEMBER).unwrap();
-    let response = assertion(&mut token, challenge, ORIGIN);
     assert_eq!(
-        server
-            .finish_authentication(pending, &response)
-            .unwrap_err(),
-        Error::VerificationFailed
+        serde_json::to_value(server.list(MEMBER).unwrap()).unwrap(),
+        before
     );
 }
 
