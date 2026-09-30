@@ -1,6 +1,6 @@
 use crate::{CredentialID, Error, StoredPasskey, Uuid};
 
-/// Transactional storage boundary. A future libSQL adapter must use crlt.
+/// Transactional storage boundary, implemented by [`crate::LibsqlStore`] via crlt.
 ///
 /// All operations are scoped by community. Implementations must preserve the
 /// atomicity documented here, return only static errors, and never log requests,

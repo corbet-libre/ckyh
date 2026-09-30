@@ -31,7 +31,8 @@ communities. The UUID is also the browser account label; human names and handles
 are not accepted or stored by cpky.
 
 `Authentication` has private fields, no public constructor, no deserializer and no
-credential details. Its accessors identify the authenticated community and member.
+credential secrets. Its accessors identify the community, member and exact passkey
+credential ID. A cloned receipt retains that same binding.
 It is an in-process result, not a signed proof or a bearer token. cvld must still
 check admission, gates, device approval and other policy.
 
@@ -90,8 +91,9 @@ two concurrent assertions with the same nonzero count cannot both succeed.
 Revocation is a boolean on the existing row, with no timestamp. It serializes
 against authentication and is rechecked at completion, including for ceremonies
 started before removal. Once a revocation commits, a subsequently committed login
-cannot succeed. It cannot retroactively invalidate an already returned result or
-an application session: cvld owns session/device authorization renewal.
+cannot succeed. The receipt carries that exact credential ID; cmbr rechecks the corresponding
+current record before every authenticated operation. Revoking that passkey
+invalidates its sessions even when another passkey remains active.
 
 Revoked credential IDs remain reserved within the community. Re-registration
 cannot clear revocation or assign the same credential ID to another member.
@@ -105,11 +107,39 @@ atomic unique `insert`, and serializable `update` with a synchronous closure.
 This generic trait deliberately requires no database or async runtime. The current
 in-memory implementation lives only in tests and uses primary and member indexes.
 
-A production libSQL adapter must use crlt, with one database per community and the
-community key in every table and query; the global wallet has its separate DB.
-Required indexes are a unique `(community, credential_id)` key and a
-`(community, member)` index. Validate query plans with `EXPLAIN QUERY PLAN` when
-implementing that adapter. No table scans are needed by this contract.
+`LibsqlStore::new(&db, community, runtime_handle)` implements that same trait via
+the crlt git dependency. It retains a fixed `crlt::Community` capability and refuses
+operations naming a different community with `NotFound`. Only construction uses
+the caller's `Db`; the adapter cannot switch communities or run migrations.
+The service routes one database per community; the global wallet has its own DB.
+Isolation also holds if the service accidentally gives two communities one DB.
+
+`LIBSQL_SCHEMA` is trusted DDL for the caller's complete crlt migration history.
+The service assigns its migration version alongside other libraries' migrations;
+the adapter never installs an independent migration ledger. The initial table is
+`cpky_passkeys`, with `community_id TEXT`, `credential_id BLOB`, `member TEXT`
+(canonical UUID) and `record BLOB` (CBOR of `StoredPasskey`), all non-null. Its
+primary key is `(community_id, member, credential_id)` and its unique credential
+index is `cpky_passkeys_credential (community_id, credential_id)`. Clustering the
+table by member makes listing an exact member range; credential lookups use the
+unique index. This avoids duplicating the record payload in a covering secondary
+index. crlt injects the community key into
+every insert and query. Decoding verifies that payload ownership and credential ID
+match the indexed columns. Malformed or inconsistent storage returns `Storage`.
+No new passkey metadata is stored. The schema and record format are not encrypted
+by cpky; deployment access control and storage protection belong to the service.
+
+Every application read and update uses the appropriate composite index; literal
+inserts need no scan. Tests check the exact statements with `EXPLAIN QUERY PLAN`,
+and crlt enforces indexed plans at execution. Member lists have no silent
+pagination: exceeding crlt's configured row limit fails with `Storage`.
+
+The service supplies and keeps alive a multithreaded Tokio runtime. The adapter
+blocks ordinary synchronous threads or `spawn_blocking` workers with
+`Handle::block_on`. Direct calls inside an async task panic; current-thread
+runtime handles are rejected with `Configuration`. This preserves existing trait
+signatures, including non-`Send`, borrowed closures/results. The adapter does not
+create a runtime per request or impose new bounds on existing store implementers.
 
 `update` must read the current row, invoke its closure exactly once, and commit
 before returning the result. It must serialize against updates and revocations
@@ -117,6 +147,16 @@ of the same key. Any closure or commit failure rolls back and returns an error;
 never release the successful closure result before commit. An adapter must not
 blindly retry a transaction containing an already-consumed closure. `insert`
 must never upsert or revive a tombstone. Store errors expose no query or row data.
+
+The libSQL adapter uses crlt's immediate transactions for both inserts and updates.
+Insertion checks the unique credential key while holding the write transaction, so duplicate
+IDs return `DuplicateCredential` without replacing another owner's row. Updates
+read current state, run the closure on the caller's thread, reject key/owner
+changes, write and commit. Closure errors and database failures roll back; panic
+unwinding drops crlt's transaction and discards its connection. Database errors
+map to `Storage` without an upstream source. Remote timeouts may leave a commit's
+outcome unknown: no successful authentication is returned, and the service must
+reconcile state before any retry. No closure is replayed automatically.
 
 `StoredPasskey` serialization is solely for trusted storage. Never deserialize
 these records from a client. Current fields are:
@@ -146,6 +186,7 @@ cpky does not download a catalogue or accept member-defined names.
 cpky emits no logs. Because upstream has detailed tracing instrumentation, all
 upstream configuration, verification and parsing calls execute with a scoped empty
 tracing dispatcher. The application's subscriber resumes unchanged afterward.
+The same suppression covers the adapter's database futures on the calling thread.
 Errors contain static categories and have no upstream error source. Credential
 records and authentication results have redacted `Debug` implementations.
 
@@ -170,6 +211,28 @@ signed authentication; malformed, UV-less, replayed, revoked and counter-regress
 responses exercise the same production verifier. Tests also cover storage
 transactions, concurrent assertions, metadata and logging boundaries.
 
-Deferred: the crlt/libSQL adapter and its transaction/query-plan tests, discoverable
-login, browser integration, a packaged/updatable authenticator-name catalogue, and
-cvld device/session authorization. These are not claimed as implemented here.
+Local libSQL tests exercise the adapter with real file-backed databases, reopen
+and migration idempotence, isolation, duplicate/revoked credentials, corrupt rows,
+rollback and panic, deferred-constraint commit failure, deadline expiry, concurrent
+counter updates through independent pools, and all query plans. The optional Turso
+round trip skips unless both `TURSO_URL` and `TURSO_TOKEN` are nonempty; it requires
+a disposable database and is not supplied credentials by public CI.
+
+Deferred: discoverable login, browser integration, a packaged/updatable
+authenticator-name catalogue, and cvld device/session authorization. These are not
+claimed as implemented here.
+
+## Private account lookup
+
+Member-facing login uses `start_authentication_for(member, credential_id)`.
+The wallet retains the credential ID returned during registration. Known, absent,
+keyless and revoked accounts all return the same options: a fresh upstream
+challenge, required user verification and exactly the caller-supplied credential
+ID. Empty or oversized IDs are rejected independently of account existence.
+No list of stored IDs is returned. A missing/revoked key leaves the private
+verification state empty, so it cannot authenticate. The UI allow-list is never
+used as authorization. Non-discoverable credentials continue to work.
+
+`start_authentication(member)` remains a trusted management integration API and
+must not be exposed to unauthenticated account probes. cmbr uses only the private
+lookup API. Pending ceremonies still require service-owned capacity limits.

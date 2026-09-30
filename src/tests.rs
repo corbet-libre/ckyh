@@ -169,6 +169,8 @@ fn registration_authentication_and_persistence_round_trip() {
     let result = login(&server, &mut token);
     assert_eq!(result.member(), MEMBER);
     assert_eq!(result.community(), "one");
+    assert_eq!(result.credential_id(), record.credential_id());
+    assert_eq!(result.clone().credential_id(), record.credential_id());
     login(&server, &mut token);
     let record = server.list(MEMBER).unwrap().remove(0);
     assert_eq!(record.counter(), 2);
@@ -965,4 +967,65 @@ fn server_operations_do_not_emit_upstream_request_traces() {
         tracing::info!("subscriber still works outside cpky");
         assert_eq!(count.load(Ordering::SeqCst), 1);
     });
+}
+
+#[test]
+fn authentication_receipt_identifies_the_revoked_key() {
+    let (server, mut token, record) = setup();
+    let authentication = login(&server, &mut token);
+    server.revoke(MEMBER, record.credential_id()).unwrap();
+    let keys = server.list(MEMBER).unwrap();
+    assert!(
+        !keys
+            .iter()
+            .any(|key| key.credential_id() == authentication.credential_id() && !key.is_revoked())
+    );
+    assert_eq!(format!("{authentication:?}"), "Authentication([redacted])");
+}
+
+#[test]
+fn credential_first_login_does_not_reveal_account_or_revocation() {
+    let (server, mut device, record) = setup();
+    let (known, pending) = server
+        .start_authentication_for(MEMBER, record.credential_id())
+        .unwrap();
+    let shape = |challenge: &RequestChallengeResponse| {
+        let mut value = serde_json::to_value(challenge).unwrap();
+        value["publicKey"]
+            .as_object_mut()
+            .unwrap()
+            .remove("challenge");
+        value
+    };
+    let (unknown, absent) = server
+        .start_authentication_for(OTHER, record.credential_id())
+        .unwrap();
+    assert_eq!(shape(&known), shape(&unknown));
+    assert_ne!(known.public_key.challenge, unknown.public_key.challenge);
+    let response = assertion(&mut device, unknown, ORIGIN);
+    assert!(server.finish_authentication(absent, &response).is_err());
+    let response = assertion(&mut device, known.clone(), ORIGIN);
+    assert_eq!(
+        server
+            .finish_authentication(pending, &response)
+            .unwrap()
+            .credential_id(),
+        record.credential_id()
+    );
+    server.revoke(MEMBER, record.credential_id()).unwrap();
+    let (revoked, pending) = server
+        .start_authentication_for(MEMBER, record.credential_id())
+        .unwrap();
+    assert_eq!(shape(&known), shape(&revoked));
+    let response = assertion(&mut device, revoked, ORIGIN);
+    assert!(server.finish_authentication(pending, &response).is_err());
+    let fake: CredentialID = vec![99; 32].into();
+    let (a, _) = server.start_authentication_for(MEMBER, &fake).unwrap();
+    let (b, _) = server.start_authentication_for(OTHER, &fake).unwrap();
+    assert_eq!(shape(&a), shape(&b));
+    assert!(
+        server
+            .start_authentication_for(MEMBER, &Vec::new().into())
+            .is_err()
+    );
 }

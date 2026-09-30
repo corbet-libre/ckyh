@@ -215,14 +215,26 @@ impl fmt::Debug for StoredPasskey {
 ///
 /// No public constructor or deserializer exists. Only successful verification and
 /// a committed storage update can produce this result through the facade.
+#[derive(Clone)]
 pub struct Authentication {
     community: String,
     member: Uuid,
+    credential: CredentialID,
 }
 
 impl Authentication {
-    pub(crate) fn new(community: String, member: Uuid) -> Self {
-        Self { community, member }
+    pub(crate) fn new(community: String, member: Uuid, credential: CredentialID) -> Self {
+        Self {
+            community,
+            member,
+            credential,
+        }
+    }
+
+    /// Exact passkey that authenticated this session. Recheck its current
+    /// revocation state before every authorized operation.
+    pub fn credential_id(&self) -> &CredentialID {
+        &self.credential
     }
 
     /// Community in which authentication succeeded.

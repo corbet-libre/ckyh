@@ -5,6 +5,7 @@
 //! to enrol a device. See `docs/CONTRACT.md` for storage and integration obligations.
 #![forbid(unsafe_code)]
 
+mod libsql_store;
 mod model;
 mod store;
 
@@ -20,6 +21,7 @@ use webauthn_rs::prelude::{
 use webauthn_rs_core::internals::AuthenticatorData;
 use webauthn_rs_core::proto::Registration;
 
+pub use libsql_store::{LIBSQL_SCHEMA, LibsqlStore};
 pub use model::{Authentication, CreationMonth, Error, StoredPasskey};
 pub use store::CredentialStore;
 pub use webauthn_rs::prelude::{
@@ -236,6 +238,49 @@ impl<S: CredentialStore> Passkeys<S> {
         ))
     }
 
+    /// Start login with the credential ID already held by the wallet.
+    ///
+    /// Known, unknown and revoked credentials receive identical browser options
+    /// apart from upstream randomness. No credential list is disclosed. The
+    /// server state contains the matching active key or no keys, so a fabricated
+    /// request can never complete. This preserves non-discoverable passkeys.
+    pub fn start_authentication_for(
+        &self,
+        member: Uuid,
+        credential_id: &CredentialID,
+    ) -> Result<(RequestChallengeResponse, PendingAuthentication), Error> {
+        if credential_id.is_empty() || credential_id.len() > 1024 {
+            return Err(Error::VerificationFailed);
+        }
+        let passkeys: Vec<_> = self
+            .list(member)?
+            .into_iter()
+            .filter(|r| !r.revoked && &r.credential_id == credential_id)
+            .map(|r| r.as_passkey())
+            .collect();
+        let (mut challenge, state) = quiet(|| {
+            self.webauthn
+                .start_passkey_authentication(&passkeys)
+                .map_err(verification_error)
+        })?;
+        // The client allow-list is a UI hint; only the private server state can
+        // authorize an assertion. Echo exactly the caller's ID in every case.
+        challenge.public_key.allow_credentials = vec![webauthn_rs_core::proto::AllowCredentials {
+            type_: "public-key".into(),
+            id: credential_id.clone().into(),
+            transports: None,
+        }];
+        Ok((
+            challenge,
+            PendingAuthentication {
+                instance: Arc::clone(&self.instance),
+                started: Instant::now(),
+                member,
+                state,
+            },
+        ))
+    }
+
     /// Verify an assertion and commit its counter before returning a result.
     ///
     /// Rechecks revocation and counters against the current row in one atomic
@@ -279,7 +324,11 @@ impl<S: CredentialStore> Passkeys<S> {
                 record.counter = verified.counter();
                 record.backup_eligible = verified.backup_eligible();
                 record.backup_state = verified.backup_state();
-                Ok(Authentication::new(self.community.clone(), pending.member))
+                Ok(Authentication::new(
+                    self.community.clone(),
+                    pending.member,
+                    verified.cred_id().clone(),
+                ))
             })
     }
 
