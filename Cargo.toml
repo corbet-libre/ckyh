@@ -1,11 +1,11 @@
 [package]
-name = "cpky"
+name = "ckyh"
 version = "0.0.0"
 edition = "2024"
 rust-version = "1.88"
-description = "Passkey authentication factor for cvld, a thin wrapper around established WebAuthn libraries"
+description = "Server-side Keyhole for passkey registration and verification with established WebAuthn libraries"
 license = "LGPL-3.0-only WITH LGPL-3.0-linking-exception"
-repository = "https://github.com/corbet-foss/cpky"
+repository = "https://github.com/corbet-foss/ckyh"
 readme = "README.md"
 publish = false
 include = ["Cargo.toml", "src/**", "docs/**", "README.md", "LICENSE", "LICENSE.md", "LICENSES/LGPL-3.0-only.txt", "LICENSES/LGPL-3.0-linking-exception.txt", "LICENSES/GPL-3.0-only.txt"]
@@ -14,7 +14,7 @@ include = ["Cargo.toml", "src/**", "docs/**", "README.md", "LICENSE", "LICENSE.m
 crate-type = ["rlib"]
 
 [dependencies]
-crlt = { git = "https://github.com/corbet-foss/crlt", rev = "80dc046d6ab53b3ea530c45bf3d7038c8b2c61b2" }
+crlt = { git = "https://github.com/corbet-foss/crlt", branch = "main" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_cbor_2 = "0.13"

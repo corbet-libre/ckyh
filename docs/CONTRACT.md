@@ -1,6 +1,6 @@
-# cpky contract
+# ckyh contract
 
-cpky is the community's lock: the LGPL server-side register of which passkeys
+ckyh is the community's lock: the LGPL server-side register of which passkeys
 (public halves) fit its door, and the only code that verifies them. It is not
 an admission gate, device registry, account recovery system, session issuer or
 authorization policy engine. The same library can serve a community or the global
@@ -26,13 +26,13 @@ deserializer enforces the same range and rejects extra fields. The server suppli
 the current month at registration completion. There is no clock or date field for
 authentication. `Uuid`, `Url`, credential IDs and challenge options are re-exported from the
 upstream library. Response wrappers retain its wire format but guard deserialization
-before upstream can discard unknown client extensions (see Keyhole below).
+before upstream can discard unknown client extensions (see Passkeys below).
 
 The member UUID is an opaque, community-local WebAuthn user handle, assigned by
 the embedding membership service. If its pseudonym has another representation,
 that service owns the stable mapping. Do not reuse a global identifier across
 communities. The UUID is also the browser account label; human names and handles
-are not accepted or stored by cpky.
+are not accepted or stored by ckyh.
 
 `Authentication` has private fields, no public constructor, no deserializer and no
 credential secrets. Its accessors identify the community, member and exact passkey
@@ -54,19 +54,19 @@ rejected. Origin matching does not implicitly permit subdomains or alternate
 ports. Each additional origin is explicitly validated before being allowed. RP IDs
 are durable credential bindings: changing an existing scope's RP makes its old
 records unavailable. Assign separate RP IDs to separate communities and the wallet;
-cpky cannot enforce deployment-wide domain assignments or public-suffix policy.
+ckyh cannot enforce deployment-wide domain assignments or public-suffix policy.
 
 Registration requests ask for no identifying attestation. Hardware and synced
 passkeys are allowed; no attestation trust or hardware-only eligibility is inferred.
 Registration requires `residentKey: "required"`, `requireResidentKey: true` and
 `userVerification: "required"`. An attestation-free server cannot prove residency
-from a registration response; Keyhole must honor these server-built options.
+from a registration response; Passkeys must honor these server-built options.
 Existing non-resident credentials can still use the credential-first path.
 
 Discoverable login emits an empty `allowCredentials` list and requires UV, with no
-member lookup at begin. cpky uses upstream's discoverable API, removing its
+member lookup at begin. ckyh uses upstream's discoverable API, removing its
 conditional-autofill mediation hint on the server so explicit sign-in works.
-Keyhole must pass the returned options through unchanged. Completion requires a
+Passkeys must pass the returned options through unchanged. Completion requires a
 16-byte UUID user handle and the exact stored credential under that member, RP and
 community. The handle is only an untrusted indexed lookup hint until signature
 verification succeeds. No account or identifier is disclosed by begin; absent,
@@ -89,7 +89,7 @@ backup eligibility before updating security state and returning success.
 
 Upstream 0.5.5 permits a change from backup-ineligible to backup-eligible, but
 rejects an assertion that simultaneously becomes eligible and already backed up.
-cpky preserves that check. Existing credentials making that combined transition
+ckyh preserves that check. Existing credentials making that combined transition
 need an upstream compatibility fix; credentials registered as backup-eligible
 are unaffected.
 
@@ -144,7 +144,7 @@ index. crlt injects the community key into
 every insert and query. Decoding verifies that payload ownership and credential ID
 match the indexed columns. Malformed or inconsistent storage returns `Storage`.
 No new passkey metadata is stored. The schema and record format are not encrypted
-by cpky; deployment access control and storage protection belong to the service.
+by ckyh; deployment access control and storage protection belong to the service.
 
 Every application read and update uses the appropriate composite index; literal
 inserts need no scan. Tests check the exact statements with `EXPLAIN QUERY PLAN`,
@@ -196,11 +196,11 @@ The AAGUID is parsed with upstream code after successful verification, including
 when attestation format is `none`. A supplied trusted catalogue can resolve it to
 a name; a missing, unknown or zero AAGUID leaves the name absent. AAGUIDs and names
 are untrusted display hints, never evidence that a credential has hardware backing.
-cpky does not download a catalogue or accept member-defined names.
+ckyh does not download a catalogue or accept member-defined names.
 
 ## Privacy and integration duties
 
-cpky emits no logs. Because upstream has detailed tracing instrumentation, all
+ckyh emits no logs. Because upstream has detailed tracing instrumentation, all
 upstream configuration, verification and parsing calls execute with a scoped empty
 tracing dispatcher. The application's subscriber resumes unchanged afterward.
 The same suppression covers the adapter's database futures on the calling thread.
@@ -210,7 +210,7 @@ records and authentication results have redacted `Debug` implementations.
 Browser wire types remain upstream types and can expose their contents when an
 application formats them. The service and storage adapter must also avoid request
 logging, response/body logging, SQL tracing and persistent ceremony state. An
-in-process host still sees transient WebAuthn data; cpky cannot prevent the host,
+in-process host still sees transient WebAuthn data; ckyh cannot prevent the host,
 proxy, crash reporter or database infrastructure from recording it.
 
 The caller authorizes registration, listing and revocation; protects against CSRF,
@@ -259,32 +259,32 @@ used as authorization. Non-discoverable credentials continue to work.
 must not be exposed to unauthenticated account probes. cmbr exposes this private
 lookup API and discoverable sign-in. Pending ceremonies still require service-owned capacity limits.
 
-## Device-side Keyhole contract
+## Device-side Passkeys contract
 
-`ckyh` is the only device-side WebAuthn adapter. `ckmg` receives only the opaque
-PRF secret; `cwst` receives only the opaque cipher handle derived by Keys. cpky
+`cpky` is the only device-side WebAuthn adapter. `ckmg` receives only the opaque
+PRF secret; `cwst` receives only the opaque cipher handle derived by Keys. ckyh
 never requests, derives, verifies or persists PRF material.
 
 1. Forward the entire server `CreationChallengeResponse` or
-   `RequestChallengeResponse` unchanged through the door and Foyer to Keyhole.
+   `RequestChallengeResponse` unchanged through the door and Foyer to Passkeys.
    Preserve challenge, RP ID, user ID (the server's member UUID bytes), account
    labels, algorithms, timeout, attestation preference, selection, UV,
    exclude/allow lists, mediation and all existing extension inputs. Convert only
    the specified base64url binary fields to browser `BufferSource`s; do not
    rebuild options or generate a replacement user handle/challenge. Add only the
    device-owned `extensions.prf` input, merging it with existing extensions.
-2. Keyhole owns the frozen, versioned PRF salt and its test vector. For member
+2. Passkeys owns the frozen, versioned PRF salt and its test vector. For member
    registration (including another passkey), require `prf.enabled === true`
    before sending any response to the server. If creation does not yield PRF
    results, obtain them locally with a get ceremony. PRF-less member registration
    is refused on the device; root/admin authentication need not unlock a vault.
-   cpky cannot attest to client-side PRF support and never accepts PRF outputs as
+   ckyh cannot attest to client-side PRF support and never accepts PRF outputs as
    proof of it.
 3. For sign-in or restore, one get ceremony against the server's challenge can
    yield both an assertion and PRF. An empty allow-list lets the authenticator
    select the synced passkey when the new device has no stored identifiers.
    Remove the **whole `prf` entry**, including `enabled`, from client extension
-   results before serializing or relaying anything outside Keyhole. Never forward
+   results before serializing or relaying anything outside Passkeys. Never forward
    `hmacGetSecret`/`hmac_get_secret` output either. Keep the assertion and all other
    non-secret fields intact. Deliver the PRF through the local non-serializable,
    zeroizing vault capability only; no HTTP/MCP/CLI/TypeScript result, page message,
@@ -294,7 +294,7 @@ never requests, derives, verifies or persists PRF material.
    create a new identity. Local unlock uses a local random challenge and discards
    the assertion. A failed server login never becomes a member session merely
    because local vault unlock succeeded.
-5. Deserialize untrusted responses **directly** into cpky's
+5. Deserialize untrusted responses **directly** into ckyh's
    `RegisterPublicKeyCredential`/`PublicKeyCredential`. Both `extensions` and
    browser-standard `clientExtensionResults` are checked. Any `prf` presence
    (even null, false, or an empty object) fails with the static message
@@ -326,7 +326,7 @@ production PRF salt or real member data is used.
 false and exposes no public setter. Registration with signed client data marking
 `crossOrigin: true` is therefore refused even when the vault origin is explicitly
 allowed. A software-authenticator regression test records this upstream behavior.
-Adding the vault origin does not enable cross-origin iframe registration. Keyhole
+Adding the vault origin does not enable cross-origin iframe registration. Passkeys
 must use the decided top-level ceremony for registration until upstream provides
 a reviewed cross-origin registration API; never rewrite client data or weaken
 origin verification to bypass the restriction. Browser/PRF iframe feasibility

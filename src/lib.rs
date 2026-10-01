@@ -35,7 +35,7 @@ const CEREMONY_LIFETIME: Duration = Duration::from_secs(300);
 /// A community-scoped server facade. The store may be shared across communities.
 ///
 /// The caller authorizes registration, listing and revocation. In particular,
-/// adding a passkey requires a live member session authorized outside cpky.
+/// adding a passkey requires a live member session authorized outside ckyh.
 /// A synced passkey ecosystem is one device; no manual key approval is involved.
 pub struct Passkeys<S> {
     store: S,
@@ -51,7 +51,7 @@ pub struct Passkeys<S> {
 /// Deliberately neither cloneable nor serializable nor printable.
 ///
 /// ```compile_fail
-/// fn copy(state: cpky::PendingRegistration) { let _ = state.clone(); }
+/// fn copy(state: ckyh::PendingRegistration) { let _ = state.clone(); }
 /// ```
 pub struct PendingRegistration {
     instance: Arc<()>,
@@ -66,11 +66,11 @@ pub struct PendingRegistration {
 /// Deliberately neither cloneable nor serializable nor printable.
 ///
 /// ```compile_fail
-/// fn copy(state: cpky::PendingAuthentication) { let _ = state.clone(); }
+/// fn copy(state: ckyh::PendingAuthentication) { let _ = state.clone(); }
 /// ```
 ///
 /// ```compile_fail
-/// fn expose(state: cpky::PendingAuthentication) {
+/// fn expose(state: ckyh::PendingAuthentication) {
 ///     let _ = serde_json::to_string(&state);
 /// }
 /// ```
@@ -85,10 +85,10 @@ pub struct PendingAuthentication {
 /// Keep it in bounded server memory, bound to the initiating client.
 ///
 /// ```compile_fail
-/// fn copy(state: cpky::PendingDiscoverableAuthentication) { let _ = state.clone(); }
+/// fn copy(state: ckyh::PendingDiscoverableAuthentication) { let _ = state.clone(); }
 /// ```
 /// ```compile_fail
-/// fn expose(state: cpky::PendingDiscoverableAuthentication) {
+/// fn expose(state: ckyh::PendingDiscoverableAuthentication) {
 ///     let _ = serde_json::to_string(&state);
 /// }
 /// ```

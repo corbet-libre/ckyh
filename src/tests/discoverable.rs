@@ -117,7 +117,7 @@ impl Software {
 
 fn with_prf(mut options: Json) -> Json {
     let original = options.clone();
-    // This is a test input, not the production Keyhole salt.
+    // This is a test input, not the production Passkeys salt.
     options["publicKey"]["extensions"]["prf"] = json!({"eval": {"first": "dGVzdC1vbmx5"}});
     let mut preserved = options.clone();
     preserved["publicKey"]["extensions"]

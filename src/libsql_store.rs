@@ -5,7 +5,7 @@ use tokio::runtime::{Handle, RuntimeFlavor};
 
 use crate::{Authentication, CredentialID, CredentialStore, Error, StoredPasskey, Uuid, quiet};
 
-/// Initial cpky schema for the service's complete crlt migration history.
+/// Initial ckyh schema for the service's complete crlt migration history.
 ///
 /// Assign a version with `crlt::Migration::new(version, "cpky_passkeys", LIBSQL_SCHEMA)`.
 /// Run migrations before constructing the store, including after reopening a DB.

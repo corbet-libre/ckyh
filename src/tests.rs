@@ -1066,7 +1066,7 @@ fn server_operations_do_not_emit_upstream_request_traces() {
         assert!(std::error::Error::source(&error).is_none());
         server.revoke(MEMBER, record.credential_id()).unwrap();
         assert_eq!(count.load(Ordering::SeqCst), 0);
-        tracing::info!("subscriber still works outside cpky");
+        tracing::info!("subscriber still works outside ckyh");
         assert_eq!(count.load(Ordering::SeqCst), 1);
     });
 }

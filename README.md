@@ -1,8 +1,8 @@
-# cpky
+# ckyh — Keyhole
 
 **The community's lock: server-side passkey authentication for cvld.**
 
-`cpky` implements the server half of WebAuthn for `cvld`, using `webauthn-rs`.
+`ckyh` implements the server half of WebAuthn for `cvld`, using `webauthn-rs`.
 It registers and verifies passkeys, requires user verification, detects signature
 counter regression, and revokes credentials. It supports discoverable sign-in for a new device with a synced passkey and no
 stored credential ID. It rejects PRF extension outputs at the wire boundary.
@@ -79,7 +79,7 @@ uses OpenSSL natively, so consumers need its platform build/runtime prerequisite
 The AAGUID parser is an upstream internal API; dependency updates must pass the
 round-trip tests. Applications supply a curated name catalogue, for example names
 from [passkey-authenticator-aaguids](https://github.com/passkeydeveloper/passkey-authenticator-aaguids).
-cpky performs no catalogue downloads. Storage connects only to the database
+ckyh performs no catalogue downloads. Storage connects only to the database
 configured by the service through crlt.
 
 ## libSQL storage
@@ -90,7 +90,7 @@ uses a separate database. Migrations also run when reopening a database so crlt
 can validate its history and recognize the tables.
 
 ```rust,no_run
-use cpky::{LIBSQL_SCHEMA, LibsqlStore, Passkeys, Url};
+use ckyh::{LIBSQL_SCHEMA, LibsqlStore, Passkeys, Url};
 use crlt::{Config, Db, Migration};
 
 # fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -112,12 +112,12 @@ API: call from synchronous threads, or use `tokio::task::spawn_blocking` from as
 code. Calling directly inside an async task panics in Tokio's blocking bridge.
 Current-thread runtime handles are rejected. Closures run on the calling thread
 exactly once; their results are returned only after commit. Transactions are
-never automatically retried. Database errors are reduced to static `cpky::Error`
+never automatically retried. Database errors are reduced to static `ckyh::Error`
 categories with no SQL, row contents or upstream source.
 
 ## Verification
 
-[GitHub Actions](https://github.com/corbet-foss/cpky/actions/workflows/ci.yml) runs
+[GitHub Actions](https://github.com/corbet-foss/ckyh/actions/workflows/ci.yml) runs
 `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings` and
 `cargo test --locked` on current stable Rust. Builds run in CI, not on workstations.
 The dependency lock is retained as a CI artifact and committed after resolution.
@@ -134,7 +134,7 @@ concurrent writers through independent pools, and exact query plans.
 
 The optional Turso test returns without connecting unless both `TURSO_URL` and
 `TURSO_TOKEN` are nonempty. Run it only against a disposable test database on an
-approved runner: it applies the cpky schema and writes fixture credentials.
+approved runner: it applies the ckyh schema and writes fixture credentials.
 Credentials are never stored in the repository or configured in public CI.
 
 ## Boundaries
@@ -158,3 +158,10 @@ See [LICENSE.md](LICENSE.md).
 For public login endpoints use `start_authentication_for(member, credential_id)`.
 It echoes the wallet's credential ID in uniform browser options without revealing
 whether the account or key exists. The older account-list API is privileged.
+
+## Compatibility
+
+The repository and Cargo package were renamed from server `cpky` to `ckyh`.
+The `cpky_passkeys` table/index names and all stored WebAuthn RP bindings,
+credential encodings and authentication context stay unchanged. Device `cpky`
+owns ceremonies; Keyhole verifies their public responses on the server.
