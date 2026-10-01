@@ -736,12 +736,21 @@ fn authorized_inserts_recheck_the_exact_live_owner_and_rp() {
         assert_eq!(store.list(COMMUNITY, MEMBER).unwrap().len(), 1);
     }
     server.revoke(MEMBER, original.credential_id()).unwrap();
-    assert_eq!(store.insert_authorized(candidate.clone(), &auth), Err(Error::Revoked));
-    fixture.runtime.block_on(store.scope.execute(
-        "DELETE FROM cpky_passkeys WHERE credential_id = ?1",
-        params![original.credential_id.as_ref()],
-    )).unwrap();
-    assert_eq!(store.insert_authorized(candidate, &auth), Err(Error::NotFound));
+    assert_eq!(
+        store.insert_authorized(candidate.clone(), &auth),
+        Err(Error::Revoked)
+    );
+    fixture
+        .runtime
+        .block_on(store.scope.execute(
+            "DELETE FROM cpky_passkeys WHERE credential_id = ?1",
+            params![original.credential_id.as_ref()],
+        ))
+        .unwrap();
+    assert_eq!(
+        store.insert_authorized(candidate, &auth),
+        Err(Error::NotFound)
+    );
     assert!(store.list(COMMUNITY, MEMBER).unwrap().is_empty());
 }
 
@@ -751,10 +760,13 @@ fn dynamically_typed_sql_corruption_cannot_become_a_passkey() {
         let fixture = Fixture::new();
         let store = fixture.store(COMMUNITY);
         let original = record(store.clone());
-        fixture.runtime.block_on(store.scope.execute(
-            &format!("UPDATE cpky_passkeys SET {field} = ?1 WHERE credential_id = ?2"),
-            params!["wrong SQL storage type", original.credential_id.as_ref()],
-        )).unwrap();
+        fixture
+            .runtime
+            .block_on(store.scope.execute(
+                &format!("UPDATE cpky_passkeys SET {field} = ?1 WHERE credential_id = ?2"),
+                params!["wrong SQL storage type", original.credential_id.as_ref()],
+            ))
+            .unwrap();
         assert_eq!(store.list(COMMUNITY, MEMBER).unwrap_err(), Error::Storage);
     }
 }

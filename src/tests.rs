@@ -1202,11 +1202,17 @@ mod discoverable;
 fn additional_registration_refuses_a_corrupted_relying_party_binding() {
     let (server, mut device, record) = setup();
     let auth = login(&server, &mut device);
-    server.store.update("one", record.credential_id(), |stored| {
-        stored.rp_id = "other.example.com".into();
-        Ok(())
-    }).unwrap();
-    assert!(matches!(server.start_additional_registration(&auth), Err(Error::NotFound)));
+    server
+        .store
+        .update("one", record.credential_id(), |stored| {
+            stored.rp_id = "other.example.com".into();
+            Ok(())
+        })
+        .unwrap();
+    assert!(matches!(
+        server.start_additional_registration(&auth),
+        Err(Error::NotFound)
+    ));
     assert!(server.list(MEMBER).is_err());
 }
 

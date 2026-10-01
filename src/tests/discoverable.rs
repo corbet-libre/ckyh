@@ -503,14 +503,21 @@ fn wire_boundary_rejects_ambiguous_fields_and_redacts_response_debug() {
     );
     strip_prf(&mut registration);
     let registration: RegisterPublicKeyCredential = serde_json::from_value(registration).unwrap();
-    assert_eq!(format!("{registration:?}"), "RegisterPublicKeyCredential([redacted])");
-    server.finish_registration(pending, &registration, month()).unwrap();
+    assert_eq!(
+        format!("{registration:?}"),
+        "RegisterPublicKeyCredential([redacted])"
+    );
+    server
+        .finish_registration(pending, &registration, month())
+        .unwrap();
     let (pending, mut assertion) = device.discover(&server);
     strip_prf(&mut assertion);
     assertion["clientExtensionResults"]["hmacGetSecret"] = Json::Null;
     let assertion: PublicKeyCredential = serde_json::from_value(assertion).unwrap();
     assert_eq!(format!("{assertion:?}"), "PublicKeyCredential([redacted])");
-    server.finish_discoverable_authentication(pending, &assertion).unwrap();
+    server
+        .finish_discoverable_authentication(pending, &assertion)
+        .unwrap();
 }
 
 #[test]
@@ -523,7 +530,9 @@ fn discovery_refuses_empty_and_oversized_credential_ids() {
         let mut response = clean_assertion(response);
         response.raw_id = id.into();
         assert_eq!(
-            server.finish_discoverable_authentication(pending, &response).unwrap_err(),
+            server
+                .finish_discoverable_authentication(pending, &response)
+                .unwrap_err(),
             Error::VerificationFailed
         );
     }
