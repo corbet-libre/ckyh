@@ -1197,3 +1197,51 @@ fn additional_registration_still_requires_user_verification() {
 }
 
 mod discoverable;
+
+#[test]
+fn additional_registration_refuses_a_corrupted_relying_party_binding() {
+    let (server, mut device, record) = setup();
+    let auth = login(&server, &mut device);
+    server.store.update("one", record.credential_id(), |stored| {
+        stored.rp_id = "other.example.com".into();
+        Ok(())
+    }).unwrap();
+    assert!(matches!(server.start_additional_registration(&auth), Err(Error::NotFound)));
+    assert!(server.list(MEMBER).is_err());
+}
+
+#[test]
+fn oversized_credential_lookup_is_refused_before_storage_access() {
+    let store = MemoryStore::default();
+    store.0.lock().unwrap().fail_reads = true;
+    let server = service(store, "one");
+    assert!(matches!(
+        server.start_authentication_for(MEMBER, &vec![1; 1025].into()),
+        Err(Error::VerificationFailed)
+    ));
+}
+
+#[test]
+fn public_errors_remain_bounded_static_diagnostics() {
+    for error in [
+        Error::Configuration,
+        Error::InvalidMonth,
+        Error::VerificationFailed,
+        Error::ClientSecretExtension,
+        Error::UserVerificationRequired,
+        Error::CounterRegression,
+        Error::Revoked,
+        Error::NoActivePasskeys,
+        Error::NotFound,
+        Error::DuplicateCredential,
+        Error::WrongCeremony,
+        Error::Expired,
+        Error::Storage,
+    ] {
+        let text = error.to_string();
+        assert!(!text.is_empty() && text.len() < 80);
+        assert!(!text.chars().any(char::is_control));
+        assert!(!text.contains(ORIGIN));
+        assert!(!text.contains(&MEMBER.to_string()));
+    }
+}

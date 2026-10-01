@@ -475,3 +475,57 @@ fn upstream_cross_origin_registration_is_refused_even_at_an_allowed_vault_origin
     );
     assert!(server.list(MEMBER).unwrap().is_empty());
 }
+
+#[test]
+fn wire_boundary_rejects_ambiguous_fields_and_redacts_response_debug() {
+    for raw in [
+        "[]",
+        r#"{"id":"one","id":"two"}"#,
+        r#"{"extensions":{},"clientExtensionResults":{}}"#,
+        r#"{"extensions":{"unknown":true,"unknown":false}}"#,
+        r#"{"extensions":[]}"#,
+        r#"{"extensions":{"hmacGetSecret":{"output1":"DO-NOT-ECHO"}}}"#,
+        r#"{"clientExtensionResults":{"hmac_get_secret":false}}"#,
+    ] {
+        let registration = serde_json::from_str::<RegisterPublicKeyCredential>(raw).unwrap_err();
+        let assertion = serde_json::from_str::<PublicKeyCredential>(raw).unwrap_err();
+        assert!(!registration.to_string().contains("DO-NOT-ECHO"));
+        assert!(!assertion.to_string().contains("DO-NOT-ECHO"));
+    }
+    let server = service(MemoryStore::default(), "one");
+    let mut device = Software::default();
+    let (options, pending) = server.start_registration(MEMBER).unwrap();
+    let mut registration = device.ceremony(
+        with_prf(serde_json::to_value(options).unwrap()),
+        true,
+        true,
+        ORIGIN,
+    );
+    strip_prf(&mut registration);
+    let registration: RegisterPublicKeyCredential = serde_json::from_value(registration).unwrap();
+    assert_eq!(format!("{registration:?}"), "RegisterPublicKeyCredential([redacted])");
+    server.finish_registration(pending, &registration, month()).unwrap();
+    let (pending, mut assertion) = device.discover(&server);
+    strip_prf(&mut assertion);
+    assertion["clientExtensionResults"]["hmacGetSecret"] = Json::Null;
+    let assertion: PublicKeyCredential = serde_json::from_value(assertion).unwrap();
+    assert_eq!(format!("{assertion:?}"), "PublicKeyCredential([redacted])");
+    server.finish_discoverable_authentication(pending, &assertion).unwrap();
+}
+
+#[test]
+fn discovery_refuses_empty_and_oversized_credential_ids() {
+    let server = service(MemoryStore::default(), "one");
+    let mut device = Software::default();
+    device.register(&server, MEMBER);
+    for id in [Vec::new(), vec![7; 1025]] {
+        let (pending, response) = device.discover(&server);
+        let mut response = clean_assertion(response);
+        response.raw_id = id.into();
+        assert_eq!(
+            server.finish_discoverable_authentication(pending, &response).unwrap_err(),
+            Error::VerificationFailed
+        );
+    }
+    assert_eq!(server.list(MEMBER).unwrap()[0].counter(), 0);
+}

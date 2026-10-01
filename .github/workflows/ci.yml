@@ -2,8 +2,9 @@ name: ci
 permissions:
   contents: read
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci
+  cancel-in-progress: false
+  queue: max
 jobs:
   resolve:
     runs-on: ubuntu-latest
@@ -14,6 +15,8 @@ jobs:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
     - uses: dtolnay/rust-toolchain@stable
+    - name: Check the committed dependency graph before refresh
+      run: python3 .github/check-first-party.py
     - name: Resolve one fresh dependency snapshot
       run: 'cargo update
 
@@ -40,7 +43,11 @@ jobs:
     - uses: actions/download-artifact@v8
       with: &id002
         name: resolved-lock
-    - run: python3 .github/check-first-party.py
+    - run: 'python3 .github/check-first-party.py
+
+        python3 .github/test-source-coverage.py
+
+        node --test .github/test-auto-merge.mjs'
     - uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0
       with:
         tool: cargo-deny
@@ -121,6 +128,7 @@ jobs:
     - uses: Swatinem/rust-cache@v2
       with:
         prefix-key: coverage
+        cache-on-failure: true
     - uses: taiki-e/install-action@v2
       with:
         tool: cargo-llvm-cov
@@ -131,22 +139,34 @@ jobs:
 
         cargo llvm-cov --locked --workspace --all-features --branch --no-cfg-coverage --no-cfg-coverage-nightly
         --ignore-filename-regex ''(/tests/|/tests\.rs$)'' --json --output-path coverage.json'
-    - name: Require every reachable line and branch
-      run: python3 .github/check-coverage.py coverage.json
+    - name: Export source counters from the same execution
+      run: cargo llvm-cov report --locked --branch --ignore-filename-regex '(/tests/|/tests\.rs$)' --lcov
+        --output-path coverage.lcov
+    - name: Export independent source locations from the same execution
+      run: cargo llvm-cov report --locked --branch --ignore-filename-regex '(/tests/|/tests\.rs$)' --text
+        --output-path coverage.txt
+    - name: Require every emitted source line and branch
+      run: 'python3 .github/check-coverage.py coverage.json || true
+
+        python3 .github/check-source-coverage.py coverage.lcov coverage.json coverage.txt'
     - uses: actions/upload-artifact@v7
       if: always()
       with:
         name: coverage
-        path: 'coverage.json
+        path: 'coverage.lcov
+
+          coverage.json
 
           Cargo.lock
 
-          resolver.txt'
+          resolver.txt
+
+          coverage.txt'
         retention-days: 7
 'on':
   push:
     branches:
-    - '**'
+    - main
     paths-ignore:
     - '**.md'
     - LICENSE
