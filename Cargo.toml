@@ -14,7 +14,7 @@ include = ["Cargo.toml", "src/**", "docs/**", "README.md", "LICENSE", "LICENSE.m
 crate-type = ["rlib"]
 
 [dependencies]
-crlt = { git = "https://github.com/corbet-foss/crlt", rev = "6b94dacd7fa04aa8847c62c6471a1fc5c0f6c9dc" }
+crlt = { git = "https://github.com/corbet-foss/crlt", rev = "80dc046d6ab53b3ea530c45bf3d7038c8b2c61b2" }
 serde = { version = "1", features = ["derive"] }
 serde_cbor_2 = "0.13"
 tokio = { version = "1", features = ["rt-multi-thread"] }

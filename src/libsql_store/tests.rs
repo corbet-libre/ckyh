@@ -654,3 +654,42 @@ fn turso_round_trip_when_configured() {
         ))
         .unwrap();
 }
+
+#[test]
+fn additional_key_survives_removal_and_reopen_with_atomic_authorizer_check() {
+    let fixture = Fixture::new();
+    let server = service(fixture.store(COMMUNITY));
+    let mut first = SoftToken::new(true).unwrap().0;
+    let original = register(&server, &mut first);
+    let (pending, response) = assertion(&server, &mut first);
+    let auth = server.finish_authentication(pending, &response).unwrap();
+    let mut second = SoftToken::new(true).unwrap().0;
+    let (options, pending) = server.start_additional_registration(&auth).unwrap();
+    let response = second
+        .perform_register(Url::parse(ORIGIN).unwrap(), options.public_key, 300_000)
+        .unwrap();
+    let added = server
+        .finish_registration(pending, &response, CreationMonth::new(2026, 10).unwrap())
+        .unwrap();
+    let (options, pending) = server.start_additional_registration(&auth).unwrap();
+    let response = SoftToken::new(true)
+        .unwrap()
+        .0
+        .perform_register(Url::parse(ORIGIN).unwrap(), options.public_key, 300_000)
+        .unwrap();
+    let reopened = fixture.reopen();
+    let other_pool =
+        service(LibsqlStore::new(&reopened, COMMUNITY, fixture.runtime.handle().clone()).unwrap());
+    other_pool.revoke(MEMBER, original.credential_id()).unwrap();
+    assert!(matches!(
+        server.finish_registration(pending, &response, CreationMonth::new(2026, 10).unwrap()),
+        Err(Error::Revoked)
+    ));
+    assert_eq!(other_pool.list(MEMBER).unwrap().len(), 2);
+    let (pending, response) = assertion(&other_pool, &mut second);
+    let authentication = other_pool
+        .finish_authentication(pending, &response)
+        .unwrap();
+    assert_eq!(authentication.member(), MEMBER);
+    assert_eq!(authentication.credential_id(), added.credential_id());
+}

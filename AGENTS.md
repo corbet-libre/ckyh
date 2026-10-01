@@ -6,7 +6,7 @@ Write all code comments and documentation in English.
 
 - Passkey authentication factor for cvld, a thin wrapper around established WebAuthn libraries.
 - Registers and verifies passkeys and hands `cvld` an opaque authentication result.
-- A synced passkey alone never enrols a new device; device addition needs approval from an already active device (no recovery).
+- The passkey ecosystem is the device. A live, UV-authenticated member session may register another UV-verified passkey for the same membership, without manual approval. No recovery beyond passkeys.
 - No own WebAuthn cryptography.
 - This crate is LGPL-3.0-only WITH LGPL-3.0-linking-exception. Do not add implementation code available only under the full GPL or AGPL.
 - Tests use fixtures only; no live authenticators.

@@ -28,6 +28,48 @@ struct Rows {
 #[derive(Clone, Default)]
 struct MemoryStore(Arc<Mutex<Rows>>);
 
+impl MemoryStore {
+    fn insert_checked(
+        &self,
+        record: StoredPasskey,
+        authorizer: Option<&Authentication>,
+    ) -> Result<(), Error> {
+        let mut rows = self.0.lock().map_err(|_| Error::Storage)?;
+        if let Some(auth) = authorizer {
+            if auth.community() != record.community || auth.member() != record.member {
+                return Err(Error::NotFound);
+            }
+            let current = rows
+                .by_id
+                .get(&(
+                    record.community.clone(),
+                    auth.credential_id().as_ref().to_vec(),
+                ))
+                .ok_or(Error::NotFound)?;
+            if current.member != record.member || current.rp_id != record.rp_id {
+                return Err(Error::NotFound);
+            }
+            if current.revoked {
+                return Err(Error::Revoked);
+            }
+        }
+        let id = record.credential_id.as_ref().to_vec();
+        let key = (record.community.clone(), id.clone());
+        if rows.by_id.contains_key(&key) {
+            return Err(Error::DuplicateCredential);
+        }
+        if rows.fail_writes {
+            return Err(Error::Storage);
+        }
+        rows.by_member
+            .entry((record.community.clone(), record.member))
+            .or_default()
+            .insert(id);
+        rows.by_id.insert(key, record);
+        Ok(())
+    }
+}
+
 impl CredentialStore for MemoryStore {
     fn list(&self, community: &str, member: Uuid) -> Result<Vec<StoredPasskey>, Error> {
         let rows = self.0.lock().map_err(|_| Error::Storage)?;
@@ -44,21 +86,15 @@ impl CredentialStore for MemoryStore {
     }
 
     fn insert(&self, record: StoredPasskey) -> Result<(), Error> {
-        let mut rows = self.0.lock().map_err(|_| Error::Storage)?;
-        let id = record.credential_id.as_ref().to_vec();
-        let key = (record.community.clone(), id.clone());
-        if rows.by_id.contains_key(&key) {
-            return Err(Error::DuplicateCredential);
-        }
-        if rows.fail_writes {
-            return Err(Error::Storage);
-        }
-        rows.by_member
-            .entry((record.community.clone(), record.member))
-            .or_default()
-            .insert(id);
-        rows.by_id.insert(key, record);
-        Ok(())
+        self.insert_checked(record, None)
+    }
+
+    fn insert_authorized(
+        &self,
+        record: StoredPasskey,
+        authorizer: &Authentication,
+    ) -> Result<(), Error> {
+        self.insert_checked(record, Some(authorizer))
     }
 
     fn update<T>(
@@ -1084,4 +1120,68 @@ fn credential_first_login_does_not_reveal_account_or_revocation() {
             .start_authentication_for(MEMBER, &Vec::new().into())
             .is_err()
     );
+}
+
+#[test]
+fn additional_passkey_requires_live_authorizer_and_survives_first_key_removal() {
+    let (server, mut first, original) = setup();
+    let auth = login(&server, &mut first);
+    let mut second = token();
+    let (options, pending) = server.start_additional_registration(&auth).unwrap();
+    assert_eq!(options.public_key.user.id.as_ref(), MEMBER.as_bytes());
+    let response = registration(&mut second, options, ORIGIN);
+    let added = server
+        .finish_registration(pending, &response, month())
+        .unwrap();
+    assert_eq!(added.member(), MEMBER);
+    assert_ne!(added.credential_id(), original.credential_id());
+    server.revoke(MEMBER, original.credential_id()).unwrap();
+    assert_eq!(
+        login(&server, &mut second).credential_id(),
+        added.credential_id()
+    );
+    assert!(matches!(
+        server.start_additional_registration(&auth),
+        Err(Error::Revoked)
+    ));
+}
+
+#[test]
+fn revoked_authorizer_cannot_complete_pending_addition() {
+    let (server, mut first, original) = setup();
+    let auth = login(&server, &mut first);
+    let (options, pending) = server.start_additional_registration(&auth).unwrap();
+    let response = registration(&mut token(), options, ORIGIN);
+    server.revoke(MEMBER, original.credential_id()).unwrap();
+    assert!(matches!(
+        server.finish_registration(pending, &response, month()),
+        Err(Error::Revoked)
+    ));
+    assert_eq!(server.list(MEMBER).unwrap().len(), 1);
+    let foreign = service(MemoryStore::default(), "other");
+    assert!(matches!(
+        foreign.start_additional_registration(&auth),
+        Err(Error::NotFound)
+    ));
+}
+
+#[test]
+fn additional_registration_still_requires_user_verification() {
+    let (server, mut first, _) = setup();
+    let auth = login(&server, &mut first);
+    let (mut options, pending) = server.start_additional_registration(&auth).unwrap();
+    options
+        .public_key
+        .authenticator_selection
+        .as_mut()
+        .unwrap()
+        .user_verification = UserVerificationPolicy::Discouraged_DO_NOT_USE;
+    let mut unverified = SoftToken::new(false).unwrap().0;
+    let response = registration(&mut unverified, options, ORIGIN);
+    assert!(
+        server
+            .finish_registration(pending, &response, month())
+            .is_err()
+    );
+    assert_eq!(server.list(MEMBER).unwrap().len(), 1);
 }

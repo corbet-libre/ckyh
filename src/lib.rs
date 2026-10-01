@@ -34,7 +34,8 @@ const CEREMONY_LIFETIME: Duration = Duration::from_secs(300);
 /// A community-scoped server facade. The store may be shared across communities.
 ///
 /// The caller authorizes registration, listing and revocation. In particular,
-/// adding a device requires approval from an existing active device outside cpky.
+/// adding a passkey requires a live member session authorized outside cpky.
+/// A synced passkey ecosystem is one device; no manual key approval is involved.
 pub struct Passkeys<S> {
     store: S,
     community: String,
@@ -56,6 +57,7 @@ pub struct PendingRegistration {
     started: Instant,
     member: Uuid,
     state: PasskeyRegistration,
+    authorizer: Option<Authentication>,
 }
 
 /// Single-use, expiring authentication state. Never send this to a client.
@@ -159,8 +161,37 @@ impl<S: CredentialStore> Passkeys<S> {
                 started: Instant::now(),
                 member,
                 state,
+                authorizer: None,
             },
         ))
+    }
+
+    /// Begin another UV-required passkey for the authenticated membership.
+    ///
+    /// The caller must validate session lifetime. The exact authenticating key
+    /// must be live now and when insertion commits; no manual approval or recovery
+    /// identity is accepted. Keep the returned state in that same server session.
+    pub fn start_additional_registration(
+        &self,
+        authentication: &Authentication,
+    ) -> Result<(CreationChallengeResponse, PendingRegistration), Error> {
+        if authentication.community() != self.community {
+            return Err(Error::NotFound);
+        }
+        let authorizer = self
+            .list(authentication.member())?
+            .into_iter()
+            .find(|record| record.credential_id() == authentication.credential_id())
+            .ok_or(Error::NotFound)?;
+        if authorizer.is_revoked() {
+            return Err(Error::Revoked);
+        }
+        if authorizer.rp_id != self.rp_id {
+            return Err(Error::NotFound);
+        }
+        let (challenge, mut pending) = self.start_registration(authentication.member())?;
+        pending.authorizer = Some(authentication.clone());
+        Ok((challenge, pending))
     }
 
     /// Verify and atomically insert a credential, including uniqueness checks.
@@ -204,7 +235,11 @@ impl<S: CredentialStore> Passkeys<S> {
             authenticator_type,
             created,
         );
-        self.store.insert(record.clone())?;
+        if let Some(authorizer) = pending.authorizer {
+            self.store.insert_authorized(record.clone(), &authorizer)?;
+        } else {
+            self.store.insert(record.clone())?;
+        }
         Ok(record)
     }
 

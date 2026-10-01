@@ -34,7 +34,7 @@ are not accepted or stored by cpky.
 credential secrets. Its accessors identify the community, member and exact passkey
 credential ID. A cloned receipt retains that same binding.
 It is an in-process result, not a signed proof or a bearer token. cvld must still
-check admission, gates, device approval and other policy.
+check admission, gates, session validity and other membership policy.
 
 ## Verification and ceremony lifetime
 
@@ -198,9 +198,14 @@ proxy, crash reporter or database infrastructure from recording it.
 
 The caller authorizes registration, listing and revocation; protects against CSRF,
 enforces request-size and rate limits, and authenticates server-side sessions.
-A synced passkey alone never authorizes adding a device. Approval by an already
-active device is enforced by the surrounding cvld device protocol. No cpky API
-enrols devices or provides account recovery.
+The passkey ecosystem is the device. A live member session authenticated with UV
+may start another UV-required registration for that same member, without manual
+approval. `start_additional_registration` binds server-side state to the exact
+authenticating credential. `finish_registration` atomically checks that credential
+is still active while inserting the new one. The caller rechecks session lifetime
+and membership at completion. There is no recovery identity or override.
+Removing a passkey invalidates its sessions; the membership owner releases the
+member permanently when every passkey is lost or removed (NO RETURN).
 
 ## Validation and deferred work
 

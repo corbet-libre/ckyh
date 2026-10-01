@@ -3,7 +3,7 @@ use std::{fmt, future::Future};
 use crlt::{Community, Db, Row, Transaction, Value, params};
 use tokio::runtime::{Handle, RuntimeFlavor};
 
-use crate::{CredentialID, CredentialStore, Error, StoredPasskey, Uuid, quiet};
+use crate::{Authentication, CredentialID, CredentialStore, Error, StoredPasskey, Uuid, quiet};
 
 /// Initial cpky schema for the service's complete crlt migration history.
 ///
@@ -45,6 +45,63 @@ pub struct LibsqlStore {
 }
 
 impl LibsqlStore {
+    fn insert_checked(
+        &self,
+        record: StoredPasskey,
+        authorizer: Option<&Authentication>,
+    ) -> Result<(), Error> {
+        self.check_scope(&record.community)?;
+        let bytes = serde_cbor_2::to_vec(&record).map_err(|_| Error::Storage)?;
+        self.run(async {
+            let mut tx = self.scope.tx().await.map_err(|_| Error::Storage)?;
+            let result = async {
+                if let Some(auth) = authorizer {
+                    if auth.community() != record.community || auth.member() != record.member {
+                        return Err(Error::NotFound);
+                    }
+                    let rows = tx
+                        .query(GET, params![auth.credential_id().as_ref()])
+                        .await
+                        .map_err(|_| Error::Storage)?;
+                    let current = self.decode(rows.first().ok_or(Error::NotFound)?)?;
+                    if current.member != record.member || current.rp_id != record.rp_id {
+                        return Err(Error::NotFound);
+                    }
+                    if current.revoked {
+                        return Err(Error::Revoked);
+                    }
+                }
+                // BEGIN IMMEDIATE serializes this check with all writers, including
+                // stores using independent pools or processes for the same file.
+                if !tx
+                    .query(EXISTS, params![record.credential_id.as_ref()])
+                    .await
+                    .map_err(|_| Error::Storage)?
+                    .is_empty()
+                {
+                    return Err(Error::DuplicateCredential);
+                }
+                let count = tx
+                    .execute(
+                        INSERT,
+                        params![
+                            record.credential_id.as_ref(),
+                            record.member.to_string(),
+                            bytes
+                        ],
+                    )
+                    .await
+                    .map_err(|_| Error::Storage)?;
+                if count != 1 {
+                    return Err(Error::Storage);
+                }
+                Ok(())
+            }
+            .await;
+            complete(tx, result).await
+        })
+    }
+
     /// Bind the store to one community in an already migrated database.
     ///
     /// Only the derived community capability is retained, not migration authority.
@@ -112,40 +169,15 @@ impl CredentialStore for LibsqlStore {
     }
 
     fn insert(&self, record: StoredPasskey) -> Result<(), Error> {
-        self.check_scope(&record.community)?;
-        let bytes = serde_cbor_2::to_vec(&record).map_err(|_| Error::Storage)?;
-        self.run(async {
-            let mut tx = self.scope.tx().await.map_err(|_| Error::Storage)?;
-            let result = async {
-                // BEGIN IMMEDIATE serializes this check with all writers, including
-                // stores using independent pools or processes for the same file.
-                if !tx
-                    .query(EXISTS, params![record.credential_id.as_ref()])
-                    .await
-                    .map_err(|_| Error::Storage)?
-                    .is_empty()
-                {
-                    return Err(Error::DuplicateCredential);
-                }
-                let count = tx
-                    .execute(
-                        INSERT,
-                        params![
-                            record.credential_id.as_ref(),
-                            record.member.to_string(),
-                            bytes
-                        ],
-                    )
-                    .await
-                    .map_err(|_| Error::Storage)?;
-                if count != 1 {
-                    return Err(Error::Storage);
-                }
-                Ok(())
-            }
-            .await;
-            complete(tx, result).await
-        })
+        self.insert_checked(record, None)
+    }
+
+    fn insert_authorized(
+        &self,
+        record: StoredPasskey,
+        authorizer: &Authentication,
+    ) -> Result<(), Error> {
+        self.insert_checked(record, Some(authorizer))
     }
 
     fn update<T>(

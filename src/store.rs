@@ -1,4 +1,4 @@
-use crate::{CredentialID, Error, StoredPasskey, Uuid};
+use crate::{Authentication, CredentialID, Error, StoredPasskey, Uuid};
 
 /// Transactional storage boundary, implemented by [`crate::LibsqlStore`] via crlt.
 ///
@@ -14,6 +14,16 @@ pub trait CredentialStore {
     /// any member. On collision return `Error::DuplicateCredential`; never replace
     /// an existing row, including a revocation tombstone.
     fn insert(&self, record: StoredPasskey) -> Result<(), Error>;
+
+    /// Insert an additional key only while the exact authorizing key is active.
+    /// Check ownership, community and RP against the new record, and revocation,
+    /// in the same serializable transaction as uniqueness checking and insertion.
+    /// Serialize against authorizer revocation, including other pools/processes.
+    fn insert_authorized(
+        &self,
+        record: StoredPasskey,
+        authorizer: &Authentication,
+    ) -> Result<(), Error>;
 
     /// Read the current row and run `change` exactly once in a serializable atomic
     /// transaction. Serialize against every update/revocation of that credential.

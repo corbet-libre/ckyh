@@ -141,7 +141,7 @@ What it does:
 
 What it never does:
 
-- A synced passkey alone never enrols a new device; device addition needs approval from an already active device (no recovery).
+- The passkey ecosystem is the device. A live, UV-authenticated member session may register another UV-verified passkey for the same membership, without manual approval. No recovery beyond passkeys.
 - No own WebAuthn cryptography.
 
 ## License
