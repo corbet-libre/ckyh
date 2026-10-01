@@ -129,12 +129,21 @@ fn token() -> SoftToken {
 
 fn registration(
     token: &mut SoftToken,
-    challenge: CreationChallengeResponse,
+    mut challenge: CreationChallengeResponse,
     origin: &str,
 ) -> RegisterPublicKeyCredential {
+    // Legacy non-resident fixture. The PRF/discovery suite uses a resident
+    // software authenticator against the server options without this override.
+    challenge
+        .public_key
+        .authenticator_selection
+        .as_mut()
+        .unwrap()
+        .require_resident_key = false;
     token
         .perform_register(Url::parse(origin).unwrap(), challenge.public_key, 300_000)
         .unwrap()
+        .into()
 }
 
 fn assertion(
@@ -145,6 +154,7 @@ fn assertion(
     token
         .perform_auth(Url::parse(origin).unwrap(), challenge.public_key, 300_000)
         .unwrap()
+        .into()
 }
 
 fn enrol(server: &Passkeys<MemoryStore>, token: &mut SoftToken, member: Uuid) -> StoredPasskey {
@@ -827,8 +837,8 @@ fn duplicate_id_is_rejected_at_ceremony_completion_for_another_member() {
     envelope.insert(Value::Text("attStmt".into()), Value::Map(BTreeMap::new()));
     second.response.attestation_object =
         serde_cbor_2::to_vec(&Value::Map(envelope)).unwrap().into();
-    second.raw_id = first.raw_id;
-    second.id = first.id;
+    second.raw_id = first.raw_id.clone();
+    second.id = first.id.clone();
     assert_eq!(
         server
             .finish_registration(second_pending, &second, month())
@@ -1185,3 +1195,5 @@ fn additional_registration_still_requires_user_verification() {
     );
     assert_eq!(server.list(MEMBER).unwrap().len(), 1);
 }
+
+mod discoverable;

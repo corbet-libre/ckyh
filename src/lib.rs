@@ -7,6 +7,7 @@
 
 mod libsql_store;
 mod model;
+mod response;
 mod store;
 
 use std::collections::BTreeMap;
@@ -15,18 +16,18 @@ use std::time::{Duration, Instant};
 
 use serde::Deserialize;
 use webauthn_rs::prelude::{
-    Credential, PasskeyAuthentication, PasskeyRegistration, Webauthn, WebauthnBuilder,
-    WebauthnError,
+    AuthenticationResult, Credential, DiscoverableAuthentication, PasskeyAuthentication,
+    PasskeyRegistration, Webauthn, WebauthnBuilder, WebauthnError,
 };
 use webauthn_rs_core::internals::AuthenticatorData;
 use webauthn_rs_core::proto::Registration;
 
 pub use libsql_store::{LIBSQL_SCHEMA, LibsqlStore};
 pub use model::{Authentication, CreationMonth, Error, StoredPasskey};
+pub use response::{PublicKeyCredential, RegisterPublicKeyCredential};
 pub use store::CredentialStore;
 pub use webauthn_rs::prelude::{
-    CreationChallengeResponse, CredentialID, PublicKeyCredential, RegisterPublicKeyCredential,
-    RequestChallengeResponse, Url, Uuid,
+    CreationChallengeResponse, CredentialID, RequestChallengeResponse, Url, Uuid,
 };
 
 const CEREMONY_LIFETIME: Duration = Duration::from_secs(300);
@@ -78,6 +79,23 @@ pub struct PendingAuthentication {
     started: Instant,
     member: Uuid,
     state: PasskeyAuthentication,
+}
+
+/// Single-use, expiring sign-in state with no member or credential selected yet.
+/// Keep it in bounded server memory, bound to the initiating client.
+///
+/// ```compile_fail
+/// fn copy(state: cpky::PendingDiscoverableAuthentication) { let _ = state.clone(); }
+/// ```
+/// ```compile_fail
+/// fn expose(state: cpky::PendingDiscoverableAuthentication) {
+///     let _ = serde_json::to_string(&state);
+/// }
+/// ```
+pub struct PendingDiscoverableAuthentication {
+    instance: Arc<()>,
+    started: Instant,
+    state: DiscoverableAuthentication,
 }
 
 impl<S: CredentialStore> Passkeys<S> {
@@ -149,11 +167,22 @@ impl<S: CredentialStore> Passkeys<S> {
         let records = self.list(member)?;
         let excluded = records.iter().map(|r| r.credential_id.clone()).collect();
         let label = member.to_string();
-        let (challenge, state) = quiet(|| {
+        let (mut challenge, state) = quiet(|| {
             self.webauthn
                 .start_passkey_registration(member, &label, &label, Some(excluded))
                 .map_err(verification_error)
         })?;
+        // Upstream's general passkey API permits non-resident keys. Require
+        // discovery in our server-built options without requiring attestation
+        // or a particular authenticator/provider. Residency is a client property,
+        // not something a server can establish from an attestation-free response.
+        let selection = challenge
+            .public_key
+            .authenticator_selection
+            .as_mut()
+            .ok_or(Error::Configuration)?;
+        selection.resident_key = Some(webauthn_rs_core::proto::ResidentKeyRequirement::Required);
+        selection.require_resident_key = true;
         Ok((
             challenge,
             PendingRegistration {
@@ -326,6 +355,7 @@ impl<S: CredentialStore> Passkeys<S> {
         response: &PublicKeyCredential,
     ) -> Result<Authentication, Error> {
         self.check_pending(&pending.instance, pending.started)?;
+        response.check_extensions()?;
         if response
             .response
             .user_handle
@@ -339,12 +369,74 @@ impl<S: CredentialStore> Passkeys<S> {
                 .finish_passkey_authentication(response, &pending.state)
                 .map_err(verification_error)
         })?;
+        self.commit_authentication(pending.member, verified)
+    }
+
+    /// Start usernameless sign-in, including restore with an empty client vault.
+    /// No account lookup occurs and no stored credential IDs are disclosed.
+    pub fn start_discoverable_authentication(
+        &self,
+    ) -> Result<(RequestChallengeResponse, PendingDiscoverableAuthentication), Error> {
+        let (mut challenge, state) = quiet(|| {
+            self.webauthn
+                .start_discoverable_authentication()
+                .map_err(verification_error)
+        })?;
+        // Upstream selects conditional autofill. A normal explicit sign-in must
+        // also work without an autofill field; this is part of our server options.
+        challenge.mediation = None;
+        Ok((
+            challenge,
+            PendingDiscoverableAuthentication {
+                instance: Arc::clone(&self.instance),
+                started: Instant::now(),
+                state,
+            },
+        ))
+    }
+
+    /// Resolve the claimed user handle and exact credential, then verify them.
+    /// The handle is an untrusted lookup hint until the signature verifies.
+    pub fn finish_discoverable_authentication(
+        &self,
+        pending: PendingDiscoverableAuthentication,
+        response: &PublicKeyCredential,
+    ) -> Result<Authentication, Error> {
+        self.check_pending(&pending.instance, pending.started)?;
+        response.check_extensions()?;
+        let (member, credential_id) = quiet(|| {
+            self.webauthn
+                .identify_discoverable_authentication(response)
+                .map_err(verification_error)
+        })?;
+        if credential_id.is_empty() || credential_id.len() > 1024 {
+            return Err(Error::VerificationFailed);
+        }
+        let credentials: Vec<_> = self
+            .list(member)?
+            .into_iter()
+            .filter(|record| !record.revoked && record.credential_id.as_ref() == credential_id)
+            .map(|record| record.as_passkey().into())
+            .collect();
+        let verified = quiet(|| {
+            self.webauthn
+                .finish_discoverable_authentication(response, pending.state, &credentials)
+                .map_err(verification_error)
+        })?;
+        self.commit_authentication(member, verified)
+    }
+
+    fn commit_authentication(
+        &self,
+        member: Uuid,
+        verified: AuthenticationResult,
+    ) -> Result<Authentication, Error> {
         if !verified.user_verified() {
             return Err(Error::UserVerificationRequired);
         }
         self.store
             .update(&self.community, verified.cred_id(), |record| {
-                self.check_record(record, pending.member)?;
+                self.check_record(record, member)?;
                 if record.revoked {
                     return Err(Error::Revoked);
                 }
@@ -360,7 +452,7 @@ impl<S: CredentialStore> Passkeys<S> {
                 record.backup_state = verified.backup_state();
                 Ok(Authentication::new(
                     self.community.clone(),
-                    pending.member,
+                    member,
                     verified.cred_id().clone(),
                 ))
             })

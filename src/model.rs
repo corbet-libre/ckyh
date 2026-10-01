@@ -13,6 +13,8 @@ pub enum Error {
     InvalidMonth,
     /// An assertion or registration failed WebAuthn verification.
     VerificationFailed,
+    /// A client sent PRF or legacy hmac-secret extension outputs.
+    ClientSecretExtension,
     /// The authenticator did not verify its user.
     UserVerificationRequired,
     /// A nonzero counter failed to advance, or regressed to zero.
@@ -39,6 +41,7 @@ impl fmt::Display for Error {
             Self::Configuration => "invalid passkey configuration",
             Self::InvalidMonth => "invalid creation month",
             Self::VerificationFailed => "passkey verification failed",
+            Self::ClientSecretExtension => "client secret extension refused",
             Self::UserVerificationRequired => "user verification required",
             Self::CounterRegression => "passkey counter regression detected",
             Self::Revoked => "passkey revoked",

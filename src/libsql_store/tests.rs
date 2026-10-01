@@ -73,10 +73,17 @@ fn service(store: LibsqlStore) -> Passkeys<LibsqlStore> {
 }
 
 fn register(server: &Passkeys<LibsqlStore>, token: &mut SoftToken) -> StoredPasskey {
-    let (challenge, pending) = server.start_registration(MEMBER).unwrap();
-    let response = token
+    let (mut challenge, pending) = server.start_registration(MEMBER).unwrap();
+    challenge
+        .public_key
+        .authenticator_selection
+        .as_mut()
+        .unwrap()
+        .require_resident_key = false;
+    let response: crate::RegisterPublicKeyCredential = token
         .perform_register(Url::parse(ORIGIN).unwrap(), challenge.public_key, 300_000)
-        .unwrap();
+        .unwrap()
+        .into();
     server
         .finish_registration(pending, &response, CreationMonth::new(2026, 9).unwrap())
         .unwrap()
@@ -90,7 +97,7 @@ fn assertion(
     let response = token
         .perform_auth(Url::parse(ORIGIN).unwrap(), challenge.public_key, 300_000)
         .unwrap();
-    (pending, response)
+    (pending, response.into())
 }
 
 fn record(store: LibsqlStore) -> StoredPasskey {
@@ -664,19 +671,33 @@ fn additional_key_survives_removal_and_reopen_with_atomic_authorizer_check() {
     let (pending, response) = assertion(&server, &mut first);
     let auth = server.finish_authentication(pending, &response).unwrap();
     let mut second = SoftToken::new(true).unwrap().0;
-    let (options, pending) = server.start_additional_registration(&auth).unwrap();
-    let response = second
+    let (mut options, pending) = server.start_additional_registration(&auth).unwrap();
+    options
+        .public_key
+        .authenticator_selection
+        .as_mut()
+        .unwrap()
+        .require_resident_key = false;
+    let response: crate::RegisterPublicKeyCredential = second
         .perform_register(Url::parse(ORIGIN).unwrap(), options.public_key, 300_000)
-        .unwrap();
+        .unwrap()
+        .into();
     let added = server
         .finish_registration(pending, &response, CreationMonth::new(2026, 10).unwrap())
         .unwrap();
-    let (options, pending) = server.start_additional_registration(&auth).unwrap();
-    let response = SoftToken::new(true)
+    let (mut options, pending) = server.start_additional_registration(&auth).unwrap();
+    options
+        .public_key
+        .authenticator_selection
+        .as_mut()
+        .unwrap()
+        .require_resident_key = false;
+    let response: crate::RegisterPublicKeyCredential = SoftToken::new(true)
         .unwrap()
         .0
         .perform_register(Url::parse(ORIGIN).unwrap(), options.public_key, 300_000)
-        .unwrap();
+        .unwrap()
+        .into();
     let reopened = fixture.reopen();
     let other_pool =
         service(LibsqlStore::new(&reopened, COMMUNITY, fixture.runtime.handle().clone()).unwrap());

@@ -1,10 +1,12 @@
 # cpky
 
-**Passkey authentication factor for cvld.**
+**The community's lock: server-side passkey authentication for cvld.**
 
 `cpky` implements the server half of WebAuthn for `cvld`, using `webauthn-rs`.
 It registers and verifies passkeys, requires user verification, detects signature
-counter regression, and revokes credentials. It does not run in the browser.
+counter regression, and revokes credentials. It supports discoverable sign-in for a new device with a synced passkey and no
+stored credential ID. It rejects PRF extension outputs at the wire boundary.
+It does not run in the browser.
 
 Storage sits behind `CredentialStore`. `LibsqlStore` implements it through `crlt`
 using a fixed community handle and indexed, transactional libSQL queries. Tests
@@ -58,7 +60,9 @@ Additional dependencies:
 | `tracing` | A scoped empty dispatcher prevents upstream credential/request traces. |
 | `webauthn-authenticator-rs` 0.5.5 (tests) | Software authenticator fixtures that generate real keys, attestations and signed assertions. MPL-2.0. |
 | `openssl` (tests) | Sign unusual assertion fixtures (zero counters, backup flags) using the software authenticator's test keys. |
-| `serde_json`, `tracing-subscriber` (tests) | Persistence/privacy assertions and capture of attempted tracing events. |
+| `serde_json` | Guard browser responses before upstream can discard secret extension fields. |
+| `passkey` 0.4 (tests) | 1Password's MIT/Apache-2.0 client and software authenticator, with discoverable credentials and real PRF. Unlike the existing SoftToken it exercises the complete restore ceremony. |
+| `async-trait`, `tracing-subscriber` (tests) | Software user gesture and capture of attempted tracing events. |
 | `tempfile` (tests) | Disposable local libSQL databases and reopen tests. |
 
 Storage candidates checked on crates.io and GitHub on 2026-09-30:

@@ -1,6 +1,7 @@
 # cpky contract
 
-cpky is the LGPL server-side passkey authentication factor below cvld. It is not
+cpky is the community's lock: the LGPL server-side register of which passkeys
+(public halves) fit its door, and the only code that verifies them. It is not
 an admission gate, device registry, account recovery system, session issuer or
 authorization policy engine. The same library can serve a community or the global
 wallet, with distinct RP configurations, scopes and databases.
@@ -15,14 +16,17 @@ wallet, with distinct RP configurations, scopes and databases.
 | `finish_registration` | Consumed pending state, browser registration response, server-supplied `CreationMonth` | Persisted `StoredPasskey` |
 | `start_authentication` | Member UUID | Browser request options and private `PendingAuthentication` |
 | `finish_authentication` | Consumed pending state, browser assertion | `Authentication` after a successful storage commit |
+| `start_discoverable_authentication` | No member or credential ID | Browser request options and private `PendingDiscoverableAuthentication` |
+| `finish_discoverable_authentication` | Consumed discoverable state, guarded browser assertion | `Authentication` after verification and storage commit |
 | `list` | Member UUID | Current records, including revoked tombstones |
 | `revoke` | Member UUID, credential ID | Idempotent revocation, or a static error |
 
 `CreationMonth::new(year, month)` accepts years 1–9999 and months 1–12. Its
 deserializer enforces the same range and rejects extra fields. The server supplies
 the current month at registration completion. There is no clock or date field for
-authentication. `Uuid`, `Url`, credential IDs and browser protocol types are
-re-exported from the upstream library; cpky does not define a second wire protocol.
+authentication. `Uuid`, `Url`, credential IDs and challenge options are re-exported from the
+upstream library. Response wrappers retain its wire format but guard deserialization
+before upstream can discard unknown client extensions (see Keyhole below).
 
 The member UUID is an opaque, community-local WebAuthn user handle, assigned by
 the embedding membership service. If its pseudonym has another representation,
@@ -54,7 +58,20 @@ cpky cannot enforce deployment-wide domain assignments or public-suffix policy.
 
 Registration requests ask for no identifying attestation. Hardware and synced
 passkeys are allowed; no attestation trust or hardware-only eligibility is inferred.
-Authentication is account-first, using an allow-list. Discoverable login is deferred.
+Registration requires `residentKey: "required"`, `requireResidentKey: true` and
+`userVerification: "required"`. An attestation-free server cannot prove residency
+from a registration response; Keyhole must honor these server-built options.
+Existing non-resident credentials can still use the credential-first path.
+
+Discoverable login emits an empty `allowCredentials` list and requires UV, with no
+member lookup at begin. cpky uses upstream's discoverable API, removing its
+conditional-autofill mediation hint on the server so explicit sign-in works.
+Keyhole must pass the returned options through unchanged. Completion requires a
+16-byte UUID user handle and the exact stored credential under that member, RP and
+community. The handle is only an untrusted indexed lookup hint until signature
+verification succeeds. No account or identifier is disclosed by begin; absent,
+wrong-owner and revoked credentials cannot authenticate. The same atomic current-row
+checks protect both login paths.
 
 Pending states are held only in server memory, bound to the exact facade instance,
 and expire after five minutes using monotonic time. They have no `Clone`, serde or
@@ -223,7 +240,7 @@ counter updates through independent pools, and all query plans. The optional Tur
 round trip skips unless both `TURSO_URL` and `TURSO_TOKEN` are nonempty; it requires
 a disposable database and is not supplied credentials by public CI.
 
-Deferred: discoverable login, browser integration, a packaged/updatable
+Deferred: real-browser/iframe compatibility, a packaged/updatable
 authenticator-name catalogue, and cvld device/session authorization. These are not
 claimed as implemented here.
 
@@ -239,5 +256,78 @@ verification state empty, so it cannot authenticate. The UI allow-list is never
 used as authorization. Non-discoverable credentials continue to work.
 
 `start_authentication(member)` remains a trusted management integration API and
-must not be exposed to unauthenticated account probes. cmbr uses only the private
-lookup API. Pending ceremonies still require service-owned capacity limits.
+must not be exposed to unauthenticated account probes. cmbr exposes this private
+lookup API and discoverable sign-in. Pending ceremonies still require service-owned capacity limits.
+
+## Device-side Keyhole contract
+
+`ckyh` is the only device-side WebAuthn adapter. `ckmg` receives only the opaque
+PRF secret; `cwst` receives only the opaque cipher handle derived by Keys. cpky
+never requests, derives, verifies or persists PRF material.
+
+1. Forward the entire server `CreationChallengeResponse` or
+   `RequestChallengeResponse` unchanged through the door and Foyer to Keyhole.
+   Preserve challenge, RP ID, user ID (the server's member UUID bytes), account
+   labels, algorithms, timeout, attestation preference, selection, UV,
+   exclude/allow lists, mediation and all existing extension inputs. Convert only
+   the specified base64url binary fields to browser `BufferSource`s; do not
+   rebuild options or generate a replacement user handle/challenge. Add only the
+   device-owned `extensions.prf` input, merging it with existing extensions.
+2. Keyhole owns the frozen, versioned PRF salt and its test vector. For member
+   registration (including another passkey), require `prf.enabled === true`
+   before sending any response to the server. If creation does not yield PRF
+   results, obtain them locally with a get ceremony. PRF-less member registration
+   is refused on the device; root/admin authentication need not unlock a vault.
+   cpky cannot attest to client-side PRF support and never accepts PRF outputs as
+   proof of it.
+3. For sign-in or restore, one get ceremony against the server's challenge can
+   yield both an assertion and PRF. An empty allow-list lets the authenticator
+   select the synced passkey when the new device has no stored identifiers.
+   Remove the **whole `prf` entry**, including `enabled`, from client extension
+   results before serializing or relaying anything outside Keyhole. Never forward
+   `hmacGetSecret`/`hmac_get_secret` output either. Keep the assertion and all other
+   non-secret fields intact. Deliver the PRF through the local non-serializable,
+   zeroizing vault capability only; no HTTP/MCP/CLI/TypeScript result, page message,
+   logs, storage or server request may carry it.
+4. Missing PRF on sign-in may still permit server authentication. The vault stays
+   Locked with `PrfUnavailable`; restore cannot derive its locator and must not
+   create a new identity. Local unlock uses a local random challenge and discards
+   the assertion. A failed server login never becomes a member session merely
+   because local vault unlock succeeded.
+5. Deserialize untrusted responses **directly** into cpky's
+   `RegisterPublicKeyCredential`/`PublicKeyCredential`. Both `extensions` and
+   browser-standard `clientExtensionResults` are checked. Any `prf` presence
+   (even null, false, or an empty object) fails with the static message
+   `client secret extension refused`; non-null legacy secret outputs also fail.
+   Duplicate fields/extension aliases are refused. Do not first deserialize into
+   upstream WebAuthn types: they silently drop unknown PRF fields. `From` for
+   upstream responses serves trusted in-process software authenticators only.
+   These wrappers preserve upstream verification and serialization, and redact
+   Debug. The transport maps rejection to a static invalid-response error and
+   must not log the body or deserializer diagnostics. Rejection cannot undo a
+   leak that already crossed the network: stripping on the device is mandatory.
+6. The service keeps pending state bounded, single-use and client-bound and
+   throttles both begin and finish through `cthl`. Its RP must be the exact scope
+   host, never the common base domain. Explicitly allow
+   `https://vault.<scope>.<domain>` for that community's vault iframe, retaining
+   RP `<scope>.<domain>`; wallet and root remain separate RPs/databases. No wildcard
+   origin or custom-domain broadening. Embedder Permissions-Policy and browser
+   iframe/PRF support require a separate compatibility spike; use the decided
+   top-level ceremony when a browser cannot support the iframe path.
+
+The software integration tests use 1Password's MIT/Apache-2.0 `passkey` client and
+CTAP2 authenticator: required resident credential creation, real PRF evaluation,
+synced authenticator storage with an empty client vault, signed discovery, and
+both response guards. Legacy SoftToken fixtures still exercise non-resident
+credentials and unusual signed counters/backup flags. No live authenticator,
+production PRF salt or real member data is used.
+
+**Known iframe limitation:** webauthn-rs-core 0.5.5 fixes `allow_cross_origin` to
+false and exposes no public setter. Registration with signed client data marking
+`crossOrigin: true` is therefore refused even when the vault origin is explicitly
+allowed. A software-authenticator regression test records this upstream behavior.
+Adding the vault origin does not enable cross-origin iframe registration. Keyhole
+must use the decided top-level ceremony for registration until upstream provides
+a reviewed cross-origin registration API; never rewrite client data or weaken
+origin verification to bypass the restriction. Browser/PRF iframe feasibility
+remains open.
