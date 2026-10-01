@@ -595,6 +595,7 @@ fn configuration_rejects_insecure_malformed_and_unrelated_origins() {
         "https://evil.com",
         "https://members.example.com/path",
         "https://user@members.example.com",
+        "https://:password@members.example.com",
         "https://members.example.com/?query",
         "https://members.example.com/#fragment",
         "https://notmembers.example.com",
@@ -611,6 +612,15 @@ fn configuration_rejects_insecure_malformed_and_unrelated_origins() {
     }
     assert!(matches!(
         Passkeys::new(MemoryStore::default(), "one", RP, &[]),
+        Err(Error::Configuration)
+    ));
+    assert!(matches!(
+        Passkeys::new(
+            MemoryStore::default(),
+            "one",
+            "",
+            &[Url::parse(ORIGIN).unwrap()]
+        ),
         Err(Error::Configuration)
     ));
     assert!(matches!(
@@ -813,6 +823,55 @@ fn aaguid_lookup_also_handles_none_attestation_and_zero_aaguids() {
             }
         );
     }
+}
+
+#[test]
+fn unsupported_chunked_attestation_bytes_cannot_partially_register() {
+    let server = service(MemoryStore::default(), "one");
+    let (challenge, pending) = server.start_registration(MEMBER).unwrap();
+    let mut response = registration(&mut token(), challenge, ORIGIN);
+    let Value::Map(envelope) =
+        serde_cbor_2::from_slice(response.response.attestation_object.as_ref()).unwrap()
+    else {
+        panic!("attestation must be a map");
+    };
+    // Keep the authenticator's exact signed data. Only its CBOR byte-string
+    // representation changes, using standard indefinite-container delimiters.
+    let mut encoded = vec![0xbf];
+    for (key, value) in envelope {
+        encoded.extend(serde_cbor_2::to_vec(&key).unwrap());
+        if key == Value::Text("authData".into()) {
+            let Value::Bytes(bytes) = value else {
+                panic!("authenticator data must be bytes");
+            };
+            encoded.push(0x5f);
+            for chunk in bytes.chunks(17) {
+                encoded.extend(serde_cbor_2::to_vec(&Value::Bytes(chunk.to_vec())).unwrap());
+            }
+            encoded.push(0xff);
+        } else {
+            encoded.extend(serde_cbor_2::to_vec(&value).unwrap());
+        }
+    }
+    encoded.push(0xff);
+    response.response.attestation_object = encoded.into();
+    // Upstream also requires borrowed contiguous authenticator bytes and refuses
+    // this representation before the cosmetic decoder or any storage write.
+    assert!(matches!(
+        quiet(|| {
+            server
+                .webauthn
+                .finish_passkey_registration(&response, &pending.state)
+        }),
+        Err(WebauthnError::ParseCBORFailure(_))
+    ));
+    assert_eq!(
+        server
+            .finish_registration(pending, &response, month())
+            .unwrap_err(),
+        Error::VerificationFailed
+    );
+    assert!(server.list(MEMBER).unwrap().is_empty());
 }
 
 #[test]
@@ -1249,5 +1308,44 @@ fn public_errors_remain_bounded_static_diagnostics() {
         assert!(!text.chars().any(char::is_control));
         assert!(!text.contains(ORIGIN));
         assert!(!text.contains(&MEMBER.to_string()));
+    }
+}
+
+#[test]
+fn corrupted_storage_cannot_change_a_membership_or_community() {
+    for field in 0..2 {
+        let (server, _, record) = setup();
+        server
+            .store
+            .update("one", record.credential_id(), |stored| {
+                if field == 0 {
+                    stored.community = "other".into();
+                } else {
+                    stored.member = OTHER;
+                }
+                Ok(())
+            })
+            .unwrap();
+        assert_eq!(server.list(MEMBER).unwrap_err(), Error::NotFound);
+        assert_eq!(
+            server.revoke(MEMBER, record.credential_id()),
+            Err(Error::NotFound)
+        );
+    }
+}
+
+#[test]
+fn malformed_response_fields_return_only_the_boundary_error() {
+    for value in [
+        "{}",
+        "{\"id\":42}",
+        "{\"response\":{\"secret\":\"must-not-escape\"}}",
+    ] {
+        let registration = serde_json::from_str::<RegisterPublicKeyCredential>(value).unwrap_err();
+        let assertion = serde_json::from_str::<PublicKeyCredential>(value).unwrap_err();
+        for error in [registration, assertion] {
+            assert!(error.to_string().contains("invalid passkey response"));
+            assert!(!error.to_string().contains("must-not-escape"));
+        }
     }
 }

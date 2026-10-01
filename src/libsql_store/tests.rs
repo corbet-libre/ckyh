@@ -755,6 +755,30 @@ fn authorized_inserts_recheck_the_exact_live_owner_and_rp() {
 }
 
 #[test]
+fn authorized_insert_refuses_an_actual_authentication_from_another_community() {
+    let fixture = Fixture::new();
+    let other = Passkeys::new(
+        fixture.store("two"),
+        "two",
+        "members.example.com",
+        &[Url::parse(ORIGIN).unwrap()],
+    )
+    .unwrap();
+    let mut token = SoftToken::new(true).unwrap().0;
+    register(&other, &mut token);
+    let (pending, response) = assertion(&other, &mut token);
+    let authentication = other.finish_authentication(pending, &response).unwrap();
+    let target = fixture.store(COMMUNITY);
+    let candidate = record(Fixture::new().store(COMMUNITY));
+    assert_eq!(
+        target.insert_authorized(candidate, &authentication),
+        Err(Error::NotFound)
+    );
+    assert!(target.list(COMMUNITY, MEMBER).unwrap().is_empty());
+    assert_eq!(other.list(MEMBER).unwrap().len(), 1);
+}
+
+#[test]
 fn dynamically_typed_sql_corruption_cannot_become_a_passkey() {
     for field in ["record", "credential_id"] {
         let fixture = Fixture::new();
@@ -768,5 +792,172 @@ fn dynamically_typed_sql_corruption_cannot_become_a_passkey() {
             ))
             .unwrap();
         assert_eq!(store.list(COMMUNITY, MEMBER).unwrap_err(), Error::Storage);
+    }
+}
+
+#[test]
+fn stale_authority_cannot_follow_a_reassigned_storage_row() {
+    let fixture = Fixture::new();
+    let store = fixture.store(COMMUNITY);
+    let server = service(store.clone());
+    let mut token = SoftToken::new(true).unwrap().0;
+    let mut original = register(&server, &mut token);
+    let (pending, response) = assertion(&server, &mut token);
+    let auth = server.finish_authentication(pending, &response).unwrap();
+    let candidate = record(Fixture::new().store(COMMUNITY));
+    original.member = OTHER;
+    fixture
+        .runtime
+        .block_on(store.scope.execute(
+            "UPDATE cpky_passkeys SET member = ?1, record = ?2 WHERE credential_id = ?3",
+            params![
+                OTHER.to_string(),
+                serde_cbor_2::to_vec(&original).unwrap(),
+                original.credential_id.as_ref()
+            ],
+        ))
+        .unwrap();
+    assert_eq!(
+        store.insert_authorized(candidate, &auth),
+        Err(Error::NotFound)
+    );
+    assert!(store.list(COMMUNITY, MEMBER).unwrap().is_empty());
+    assert_eq!(store.list(COMMUNITY, OTHER).unwrap().len(), 1);
+}
+
+#[test]
+fn row_decoder_refuses_an_actual_row_from_another_community() {
+    let fixture = Fixture::new();
+    let other = fixture.store("two");
+    let server = Passkeys::new(
+        other.clone(),
+        "two",
+        "members.example.com",
+        &[Url::parse(ORIGIN).unwrap()],
+    )
+    .unwrap();
+    let mut original = register(&server, &mut SoftToken::new(true).unwrap().0);
+    let rows = fixture
+        .runtime
+        .block_on(
+            other
+                .scope
+                .query(GET, params![original.credential_id.as_ref()]),
+        )
+        .unwrap();
+    assert_eq!(
+        fixture.store(COMMUNITY).decode(&rows[0]).unwrap_err(),
+        Error::Storage
+    );
+    // Even a forged CBOR community cannot override the actual SQL row's scope.
+    original.community = COMMUNITY.into();
+    fixture
+        .runtime
+        .block_on(other.scope.execute(
+            UPDATE,
+            params![
+                serde_cbor_2::to_vec(&original).unwrap(),
+                original.credential_id.as_ref()
+            ],
+        ))
+        .unwrap();
+    let rows = fixture
+        .runtime
+        .block_on(
+            other
+                .scope
+                .query(GET, params![original.credential_id.as_ref()]),
+        )
+        .unwrap();
+    assert_eq!(
+        fixture.store(COMMUNITY).decode(&rows[0]).unwrap_err(),
+        Error::Storage
+    );
+}
+
+#[test]
+fn incompatible_sql_schemas_fail_without_inserting_or_running_an_update() {
+    let source = Fixture::new();
+    let source_server = service(source.store(COMMUNITY));
+    let mut token = SoftToken::new(true).unwrap().0;
+    let original = register(&source_server, &mut token);
+    let (pending, response) = assertion(&source_server, &mut token);
+    let auth = source_server
+        .finish_authentication(pending, &response)
+        .unwrap();
+    // These are real storage migrations with missing columns or an additional
+    // unsatisfied constraint. No query result or transaction is substituted.
+    for schema in [
+        "CREATE TABLE cpky_passkeys (community_id TEXT NOT NULL, member TEXT NOT NULL, credential_id BLOB NOT NULL, PRIMARY KEY (community_id, member, credential_id));",
+        "CREATE TABLE cpky_passkeys (community_id TEXT NOT NULL, member TEXT NOT NULL, record BLOB NOT NULL, PRIMARY KEY (community_id, member));",
+        "CREATE TABLE cpky_passkeys (community_id TEXT NOT NULL, member TEXT NOT NULL, credential_id BLOB NOT NULL, record BLOB NOT NULL, required_value TEXT NOT NULL, PRIMARY KEY (community_id, member, credential_id));",
+        "CREATE TABLE cpky_passkeys (community_id TEXT NOT NULL, member TEXT NOT NULL, credential_id BLOB NOT NULL, record BLOB NOT NULL, required_value TEXT NOT NULL ON CONFLICT IGNORE, PRIMARY KEY (community_id, member, credential_id));",
+    ] {
+        let directory = tempfile::tempdir().unwrap();
+        let runtime = runtime();
+        let url = Url::from_file_path(directory.path().join("incompatible.db")).unwrap();
+        let db = runtime
+            .block_on(Db::open(Config::new(url.as_str(), "")))
+            .unwrap();
+        runtime
+            .block_on(db.migrate(&[Migration::new(1, "incompatible", schema)]))
+            .unwrap();
+        let store = LibsqlStore::new(&db, COMMUNITY, runtime.handle().clone()).unwrap();
+        assert_eq!(store.insert(original.clone()), Err(Error::Storage));
+        assert!(matches!(
+            store.insert_authorized(original.clone(), &auth),
+            Err(Error::Storage | Error::NotFound)
+        ));
+        let called = Cell::new(false);
+        let result = store.update(COMMUNITY, original.credential_id(), |_| {
+            called.set(true);
+            Ok(())
+        });
+        assert!(matches!(result, Err(Error::Storage | Error::NotFound)));
+        assert!(!called.get());
+    }
+}
+
+#[test]
+fn missing_unique_index_cannot_commit_an_ambiguous_credential_update() {
+    let source = Fixture::new();
+    let original = record(source.store(COMMUNITY));
+    let directory = tempfile::tempdir().unwrap();
+    let runtime = runtime();
+    let url = Url::from_file_path(directory.path().join("missing-index.db")).unwrap();
+    let db = runtime
+        .block_on(Db::open(Config::new(url.as_str(), "")))
+        .unwrap();
+    let schema = LIBSQL_SCHEMA.split("CREATE UNIQUE INDEX").next().unwrap();
+    runtime
+        .block_on(db.migrate(&[Migration::new(1, "incomplete imported schema", schema)]))
+        .unwrap();
+    let store = LibsqlStore::new(&db, COMMUNITY, runtime.handle().clone()).unwrap();
+    for member in [MEMBER, OTHER] {
+        let mut row = original.clone();
+        row.member = member;
+        runtime
+            .block_on(store.scope.execute(
+                INSERT,
+                params![
+                    row.credential_id.as_ref(),
+                    member.to_string(),
+                    serde_cbor_2::to_vec(&row).unwrap()
+                ],
+            ))
+            .unwrap();
+    }
+    let calls = Cell::new(0);
+    assert_eq!(
+        store.update(COMMUNITY, original.credential_id(), |row| {
+            calls.set(calls.get() + 1);
+            row.revoked = true;
+            Ok(())
+        }),
+        Err(Error::Storage)
+    );
+    assert_eq!(calls.get(), 1);
+    for member in [MEMBER, OTHER] {
+        assert!(!store.list(COMMUNITY, member).unwrap()[0].is_revoked());
     }
 }

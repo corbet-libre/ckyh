@@ -1,0 +1,126 @@
+[
+  {
+    "file": "src/lib.rs",
+    "line": 132,
+    "source": ".map_err(|_| Error::Configuration)?",
+    "target": "native",
+    "reason": "The identical immutable RP/origin pair already passed the same deterministic upstream builder in the preceding loop.",
+    "evidence": "docs/COVERAGE.md#repeated-origin-validation",
+    "evidence_sources": {
+      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
+      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
+      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+    }
+  },
+  {
+    "file": "src/lib.rs",
+    "line": 219,
+    "source": "return Err(Error::NotFound);",
+    "target": "native",
+    "reason": "The owned authorizer returned by self.list already passed check_record with this exact RP; no intervening read or mutation occurs.",
+    "evidence": "docs/COVERAGE.md#already-validated-authorizer-rp",
+    "evidence_sources": {
+      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
+      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
+      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+    }
+  },
+  {
+    "file": "src/lib.rs",
+    "line": 244,
+    "source": "return Err(Error::UserVerificationRequired);",
+    "target": "native",
+    "reason": "Required UV was verified by the real upstream registration before a Credential is returned.",
+    "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
+    "evidence_sources": {
+      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
+      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
+      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+    }
+  },
+  {
+    "file": "src/lib.rs",
+    "line": 250,
+    "source": ".map_err(|_| Error::VerificationFailed)?;",
+    "target": "native",
+    "reason": "The same immutable CBOR and borrowed authData field already decoded successfully in upstream registration.",
+    "evidence": "docs/COVERAGE.md#repeated-attestation-envelope-decoding",
+    "evidence_sources": {
+      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
+      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
+      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+    }
+  },
+  {
+    "file": "src/lib.rs",
+    "line": 435,
+    "source": "return Err(Error::UserVerificationRequired);",
+    "target": "native",
+    "reason": "Both upstream authentication flows require and verify UV before returning the AuthenticationResult.",
+    "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
+    "evidence_sources": {
+      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
+      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
+      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+    }
+  },
+  {
+    "file": "src/lib.rs",
+    "line": 218,
+    "source": "if authorizer.rp_id != self.rp_id {",
+    "target": "native",
+    "reason": "The owned authorizer returned by self.list already passed check_record with this exact RP; no intervening read or mutation occurs.",
+    "evidence": "docs/COVERAGE.md#already-validated-authorizer-rp",
+    "evidence_sources": {
+      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
+      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
+      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+    },
+    "branch": {
+      "block": 0,
+      "id": 0
+    }
+  },
+  {
+    "file": "src/lib.rs",
+    "line": 243,
+    "source": "if !credential.user_verified {",
+    "target": "native",
+    "reason": "Required UV was verified by the real upstream registration before a Credential is returned.",
+    "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
+    "evidence_sources": {
+      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
+      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
+      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+    },
+    "branch": {
+      "block": 0,
+      "id": 0
+    }
+  },
+  {
+    "file": "src/lib.rs",
+    "line": 434,
+    "source": "if !verified.user_verified() {",
+    "target": "native",
+    "reason": "Both upstream authentication flows require and verify UV before returning the AuthenticationResult.",
+    "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
+    "evidence_sources": {
+      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
+      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
+      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+    },
+    "branch": {
+      "block": 0,
+      "id": 0
+    }
+  }
+]
