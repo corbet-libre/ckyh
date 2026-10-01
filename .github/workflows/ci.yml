@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
       with: &id001
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
         persist-credentials: false
@@ -27,7 +27,7 @@ jobs:
         date -u +%FT%TZ >> resolver.txt
 
         sha256sum Cargo.lock >> resolver.txt'
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.1
       with:
         name: resolved-lock
         path: 'Cargo.lock
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
       with: *id001
     - uses: actions/download-artifact@v8
       with: &id002
@@ -57,7 +57,7 @@ jobs:
       run: 'cargo fmt --all
 
         git diff --binary > formatting.patch'
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.1
       if: failure()
       with:
         name: formatting-dependency-policy
@@ -72,7 +72,7 @@ jobs:
       CARGO_BUILD_JOBS: 2
       RUSTFLAGS: -D warnings
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
       with: *id001
     - uses: actions/download-artifact@v8
       with: *id002
@@ -92,7 +92,7 @@ jobs:
       run: cargo test --locked
     - name: Preserve dependency resolution
       if: always()
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v7.0.1
       with:
         name: dependency-lock
         path: Cargo.lock
@@ -102,7 +102,7 @@ jobs:
       run: 'cargo fmt --all
 
         git diff --binary > formatting.patch'
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.1
       if: failure()
       with:
         name: formatting-check
@@ -118,7 +118,7 @@ jobs:
     - dependency-policy
     - resolve
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@v7.0.1
       with: *id001
     - uses: actions/download-artifact@v8
       with: *id002
@@ -149,7 +149,7 @@ jobs:
       run: 'python3 .github/check-coverage.py coverage.json || true
 
         python3 .github/check-source-coverage.py coverage.lcov coverage.json coverage.txt'
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7.0.1
       if: always()
       with:
         name: coverage
