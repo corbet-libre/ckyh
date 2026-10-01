@@ -26,7 +26,7 @@ webauthn-rs-core = "0.5.5"
 [dev-dependencies]
 openssl = "0.10"
 async-trait = "0.1"
-passkey = "0.4"
+passkey = "0.5"
 tempfile = "3"
 tracing-subscriber = { version = "0.3", features = ["registry"] }
 webauthn-authenticator-rs = { version = "0.5.5", default-features = false, features = ["softtoken"] }
