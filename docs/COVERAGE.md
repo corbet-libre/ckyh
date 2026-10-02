@@ -21,6 +21,14 @@ document does not claim approval or successful execution of a new CI head.
 
 ## Proposed defensive-path exceptions
 
+The native server implementation moved from `src/lib.rs` to `src/server.rs` to
+isolate its OpenSSL/storage dependencies from the portable lineage verifier.
+The existing eight exact defensive entries were relocated by matching unchanged
+source lines and their evidence hashes refreshed; no new exclusion was added.
+New lineage code requires native and actual-browser execution and complete
+reachable coverage. The retained public browser vectors come from original
+Keyhole registration/login in the same native CI run.
+
 The source gate checks each exact line or branch arm against all three reports,
 the expected source text, and complete hashes of the invariant-owning source,
 tests and resolved lockfile. An exception fails if it moves, changes, disappears,
