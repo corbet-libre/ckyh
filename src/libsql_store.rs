@@ -239,4 +239,5 @@ impl fmt::Debug for LibsqlStore {
 }
 
 #[cfg(test)]
+#[path = "libsql_store/tests.rs"]
 mod tests;

@@ -9,6 +9,9 @@ use tracing_subscriber::prelude::*;
 use webauthn_authenticator_rs::{AuthenticatorBackend, softtoken::SoftToken};
 use webauthn_rs_core::proto::UserVerificationPolicy;
 
+#[path = "tests/lineage.rs"]
+mod lineage;
+
 const ORIGIN: &str = "https://members.example.com";
 const RP: &str = "members.example.com";
 const MEMBER: Uuid = Uuid::from_u128(1);
@@ -1255,6 +1258,7 @@ fn additional_registration_still_requires_user_verification() {
     assert_eq!(server.list(MEMBER).unwrap().len(), 1);
 }
 
+#[path = "tests/discoverable.rs"]
 mod discoverable;
 
 #[test]

@@ -6,7 +6,51 @@
 It registers and verifies passkeys, requires user verification, detects signature
 counter regression, and revokes credentials. It supports discoverable sign-in for a new device with a synced passkey and no
 stored credential ID. It rejects PRF extension outputs at the wire boundary.
-It does not run in the browser.
+The online server runs natively. The portable `lineage` module also runs in the
+browser with `default-features = false`.
+
+`Passkeys::public_credential(&Authentication)` revalidates the original live
+credential in its storage transaction and exports public SPKI, original COSE
+algorithm, credential ID, community-local member, RP, allowed origins and enrolled
+backup eligibility. Hold the original Membership lease while Policy signs this
+binding. A deserialized descriptor is never self-authenticating.
+
+`lineage::verify` consumes original authenticator/client-data bytes and the exact
+32-byte Keys operation challenge. It requires UP/UV, original RP/origin/credential
+and optional user-handle agreement, unchanged BE, valid BS, the exact ceremony context, and
+exact bounded authenticator extensions. It performs no online counter update:
+retained proofs remain verifiable after later logins. Policy/Charter must supply
+current credential revocations and Keys must apply replay/epoch/conflict rules.
+Signature success alone does not authorize a lineage change.
+
+All browsers use the same ordinary top-level vault-origin popup ceremony. The
+community UI remains top-level and the vault frame retains keys. Both the online
+server and portable verifier refuse `crossOrigin=true` and any `topOrigin`, even
+when the supplied parent matches the community. The original signed client-data
+bytes are never rewritten. The maintained online verifier stays unchanged;
+there is no library fork or frame-verification bypass. Popup-to-vault transfer
+belongs to device Passkeys and the runtime, not the server or the UI.
+
+Portable dependency survey (2026-10-02): maintained `passkey-types` supplies
+authenticator parsing and SHA-256; `webauthn-rs-proto` supplies typed client JSON;
+RustCrypto `p256` verifies ES256 DER signatures and SPKI; RustCrypto DER/SPKI and
+`pkcs1` identify RSA keys, with `ring` verifying RS256 PKCS1v1.5 SHA256 DigestInfo.
+Both are the original server's currently offered secure algorithms. Original
+OpenSSL exports standard SPKI and remains the online server verifier. No
+primitive, CBOR parser or DER parser is implemented here. `rsa` was rejected
+because [RUSTSEC-2023-0071](https://rustsec.org/advisories/RUSTSEC-2023-0071.html)
+has no patched release; no vulnerability exception is introduced. Alternatives
+with hidden challenge creation or mandatory wall-clock expiry do not fit
+retained offline proofs. `webauthn-kit` 0.3.1 was rejected after source review
+found it reads the COSE algorithm from key 2 instead of standard key 3.
+
+Native vectors register and authenticate through the original server for ES256
+and RS256, then verify the same public assertion through the portable path.
+`CKYH_LINEAGE_FIXTURE_DIR` optionally retains those public vectors for the actual
+browser test. Browser compilation requires that directory from the same native
+run and tests execute with `--no-default-features`. This source is not a claim
+that native/browser or full coverage qualification has passed. The default
+`server` feature preserves the existing API, now in `src/server.rs`.
 
 Storage sits behind `CredentialStore`. `LibsqlStore` implements it through `crlt`
 using a fixed community handle and indexed, transactional libSQL queries. Tests

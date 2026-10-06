@@ -1,86 +1,110 @@
 [
   {
-    "file": "src/lib.rs",
-    "line": 132,
+    "file": "src/server.rs",
+    "line": 131,
     "source": ".map_err(|_| Error::Configuration)?",
     "target": "native",
     "reason": "The identical immutable RP/origin pair already passed the same deterministic upstream builder in the preceding loop.",
     "evidence": "docs/COVERAGE.md#repeated-origin-validation",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "Cargo.lock": "95b748c7f905938ab71fd5c97cb1bcdb8f618ed14c58a9bb36f7d37e7a69da66",
+      "src/lib.rs": "fdbb94dddd40fe65ad17e59a54a7210829d7c42f1b7219b7cb80ff1ee62e5d54",
+      "src/lineage.rs": "20168f7beb4a7c958b293e47c66ea17abe04614192e0aa421f5e9a3265a0db03",
+      "src/model.rs": "597823e931470e0738e06db9687b187a2b243f11fed6bc357dccc9def8530edc",
+      "src/server.rs": "dab2e123d49144a9478b3ef548ccc5029d3b4b033121a2a78fcd4eef856ed05a",
+      "src/tests.rs": "0f75c54c25849071b0ce1397f42608c4099282c8a15e098031e58d189927b90c",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+      "src/tests/lineage.rs": "0e967a1eed6b10c665db8d217aa7413b85dfcb6021210b129a0bb5876acee1f9"
     }
   },
   {
-    "file": "src/lib.rs",
-    "line": 219,
+    "file": "src/server.rs",
+    "line": 222,
     "source": "return Err(Error::NotFound);",
     "target": "native",
     "reason": "The owned authorizer returned by self.list already passed check_record with this exact RP; no intervening read or mutation occurs.",
     "evidence": "docs/COVERAGE.md#already-validated-authorizer-rp",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "Cargo.lock": "95b748c7f905938ab71fd5c97cb1bcdb8f618ed14c58a9bb36f7d37e7a69da66",
+      "src/lib.rs": "fdbb94dddd40fe65ad17e59a54a7210829d7c42f1b7219b7cb80ff1ee62e5d54",
+      "src/lineage.rs": "20168f7beb4a7c958b293e47c66ea17abe04614192e0aa421f5e9a3265a0db03",
+      "src/model.rs": "597823e931470e0738e06db9687b187a2b243f11fed6bc357dccc9def8530edc",
+      "src/server.rs": "dab2e123d49144a9478b3ef548ccc5029d3b4b033121a2a78fcd4eef856ed05a",
+      "src/tests.rs": "0f75c54c25849071b0ce1397f42608c4099282c8a15e098031e58d189927b90c",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+      "src/tests/lineage.rs": "0e967a1eed6b10c665db8d217aa7413b85dfcb6021210b129a0bb5876acee1f9"
     }
   },
   {
-    "file": "src/lib.rs",
-    "line": 244,
+    "file": "src/server.rs",
+    "line": 248,
     "source": "return Err(Error::UserVerificationRequired);",
     "target": "native",
     "reason": "Required UV was verified by the real upstream registration before a Credential is returned.",
     "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "Cargo.lock": "95b748c7f905938ab71fd5c97cb1bcdb8f618ed14c58a9bb36f7d37e7a69da66",
+      "src/lib.rs": "fdbb94dddd40fe65ad17e59a54a7210829d7c42f1b7219b7cb80ff1ee62e5d54",
+      "src/lineage.rs": "20168f7beb4a7c958b293e47c66ea17abe04614192e0aa421f5e9a3265a0db03",
+      "src/model.rs": "597823e931470e0738e06db9687b187a2b243f11fed6bc357dccc9def8530edc",
+      "src/server.rs": "dab2e123d49144a9478b3ef548ccc5029d3b4b033121a2a78fcd4eef856ed05a",
+      "src/tests.rs": "0f75c54c25849071b0ce1397f42608c4099282c8a15e098031e58d189927b90c",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+      "src/tests/lineage.rs": "0e967a1eed6b10c665db8d217aa7413b85dfcb6021210b129a0bb5876acee1f9"
     }
   },
   {
-    "file": "src/lib.rs",
-    "line": 250,
+    "file": "src/server.rs",
+    "line": 254,
     "source": ".map_err(|_| Error::VerificationFailed)?;",
     "target": "native",
     "reason": "The same immutable CBOR and borrowed authData field already decoded successfully in upstream registration.",
     "evidence": "docs/COVERAGE.md#repeated-attestation-envelope-decoding",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "Cargo.lock": "95b748c7f905938ab71fd5c97cb1bcdb8f618ed14c58a9bb36f7d37e7a69da66",
+      "src/lib.rs": "fdbb94dddd40fe65ad17e59a54a7210829d7c42f1b7219b7cb80ff1ee62e5d54",
+      "src/lineage.rs": "20168f7beb4a7c958b293e47c66ea17abe04614192e0aa421f5e9a3265a0db03",
+      "src/model.rs": "597823e931470e0738e06db9687b187a2b243f11fed6bc357dccc9def8530edc",
+      "src/server.rs": "dab2e123d49144a9478b3ef548ccc5029d3b4b033121a2a78fcd4eef856ed05a",
+      "src/tests.rs": "0f75c54c25849071b0ce1397f42608c4099282c8a15e098031e58d189927b90c",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+      "src/tests/lineage.rs": "0e967a1eed6b10c665db8d217aa7413b85dfcb6021210b129a0bb5876acee1f9"
     }
   },
   {
-    "file": "src/lib.rs",
-    "line": 435,
+    "file": "src/server.rs",
+    "line": 450,
     "source": "return Err(Error::UserVerificationRequired);",
     "target": "native",
     "reason": "Both upstream authentication flows require and verify UV before returning the AuthenticationResult.",
     "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "Cargo.lock": "95b748c7f905938ab71fd5c97cb1bcdb8f618ed14c58a9bb36f7d37e7a69da66",
+      "src/lib.rs": "fdbb94dddd40fe65ad17e59a54a7210829d7c42f1b7219b7cb80ff1ee62e5d54",
+      "src/lineage.rs": "20168f7beb4a7c958b293e47c66ea17abe04614192e0aa421f5e9a3265a0db03",
+      "src/model.rs": "597823e931470e0738e06db9687b187a2b243f11fed6bc357dccc9def8530edc",
+      "src/server.rs": "dab2e123d49144a9478b3ef548ccc5029d3b4b033121a2a78fcd4eef856ed05a",
+      "src/tests.rs": "0f75c54c25849071b0ce1397f42608c4099282c8a15e098031e58d189927b90c",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+      "src/tests/lineage.rs": "0e967a1eed6b10c665db8d217aa7413b85dfcb6021210b129a0bb5876acee1f9"
     }
   },
   {
-    "file": "src/lib.rs",
-    "line": 218,
+    "file": "src/server.rs",
+    "line": 221,
     "source": "if authorizer.rp_id != self.rp_id {",
     "target": "native",
     "reason": "The owned authorizer returned by self.list already passed check_record with this exact RP; no intervening read or mutation occurs.",
     "evidence": "docs/COVERAGE.md#already-validated-authorizer-rp",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "Cargo.lock": "95b748c7f905938ab71fd5c97cb1bcdb8f618ed14c58a9bb36f7d37e7a69da66",
+      "src/lib.rs": "fdbb94dddd40fe65ad17e59a54a7210829d7c42f1b7219b7cb80ff1ee62e5d54",
+      "src/lineage.rs": "20168f7beb4a7c958b293e47c66ea17abe04614192e0aa421f5e9a3265a0db03",
+      "src/model.rs": "597823e931470e0738e06db9687b187a2b243f11fed6bc357dccc9def8530edc",
+      "src/server.rs": "dab2e123d49144a9478b3ef548ccc5029d3b4b033121a2a78fcd4eef856ed05a",
+      "src/tests.rs": "0f75c54c25849071b0ce1397f42608c4099282c8a15e098031e58d189927b90c",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+      "src/tests/lineage.rs": "0e967a1eed6b10c665db8d217aa7413b85dfcb6021210b129a0bb5876acee1f9"
     },
     "branch": {
       "block": 0,
@@ -88,17 +112,21 @@
     }
   },
   {
-    "file": "src/lib.rs",
-    "line": 243,
+    "file": "src/server.rs",
+    "line": 247,
     "source": "if !credential.user_verified {",
     "target": "native",
     "reason": "Required UV was verified by the real upstream registration before a Credential is returned.",
     "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "Cargo.lock": "95b748c7f905938ab71fd5c97cb1bcdb8f618ed14c58a9bb36f7d37e7a69da66",
+      "src/lib.rs": "fdbb94dddd40fe65ad17e59a54a7210829d7c42f1b7219b7cb80ff1ee62e5d54",
+      "src/lineage.rs": "20168f7beb4a7c958b293e47c66ea17abe04614192e0aa421f5e9a3265a0db03",
+      "src/model.rs": "597823e931470e0738e06db9687b187a2b243f11fed6bc357dccc9def8530edc",
+      "src/server.rs": "dab2e123d49144a9478b3ef548ccc5029d3b4b033121a2a78fcd4eef856ed05a",
+      "src/tests.rs": "0f75c54c25849071b0ce1397f42608c4099282c8a15e098031e58d189927b90c",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+      "src/tests/lineage.rs": "0e967a1eed6b10c665db8d217aa7413b85dfcb6021210b129a0bb5876acee1f9"
     },
     "branch": {
       "block": 0,
@@ -106,17 +134,21 @@
     }
   },
   {
-    "file": "src/lib.rs",
-    "line": 434,
+    "file": "src/server.rs",
+    "line": 449,
     "source": "if !verified.user_verified() {",
     "target": "native",
     "reason": "Both upstream authentication flows require and verify UV before returning the AuthenticationResult.",
     "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "Cargo.lock": "95b748c7f905938ab71fd5c97cb1bcdb8f618ed14c58a9bb36f7d37e7a69da66",
+      "src/lib.rs": "fdbb94dddd40fe65ad17e59a54a7210829d7c42f1b7219b7cb80ff1ee62e5d54",
+      "src/lineage.rs": "20168f7beb4a7c958b293e47c66ea17abe04614192e0aa421f5e9a3265a0db03",
+      "src/model.rs": "597823e931470e0738e06db9687b187a2b243f11fed6bc357dccc9def8530edc",
+      "src/server.rs": "dab2e123d49144a9478b3ef548ccc5029d3b4b033121a2a78fcd4eef856ed05a",
+      "src/tests.rs": "0f75c54c25849071b0ce1397f42608c4099282c8a15e098031e58d189927b90c",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "b8f612db74901587fc695e60e61efcac966cb581b0b140b27dee7640225e808d"
+      "src/tests/lineage.rs": "0e967a1eed6b10c665db8d217aa7413b85dfcb6021210b129a0bb5876acee1f9"
     },
     "branch": {
       "block": 0,
