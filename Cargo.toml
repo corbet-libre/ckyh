@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.88"
 description = "Server-side Keyhole for passkey registration and verification with established WebAuthn libraries"
 license = "LGPL-3.0-only WITH LGPL-3.0-linking-exception"
-repository = "https://github.com/corbet-foss/ckyh"
+repository = "https://git.corbet.ch/corbet-foss/ckyh"
 readme = "README.md"
 publish = false
 include = ["Cargo.toml", "src/**", "docs/**", "README.md", "LICENSE", "LICENSE.md", "LICENSES/LGPL-3.0-only.txt", "LICENSES/LGPL-3.0-linking-exception.txt", "LICENSES/GPL-3.0-only.txt"]
@@ -14,7 +14,7 @@ include = ["Cargo.toml", "src/**", "docs/**", "README.md", "LICENSE", "LICENSE.m
 crate-type = ["rlib"]
 
 [dependencies]
-crlt = { git = "https://github.com/corbet-foss/crlt", branch = "main" }
+crlt = { git = "https://git.corbet.ch/corbet-foss/crlt", branch = "main" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_cbor_2 = "0.13"
