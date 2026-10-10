@@ -581,9 +581,16 @@ fn explicitly_configured_additional_origin_is_accepted() {
     let mut token = token();
     let (challenge, pending) = server.start_registration(MEMBER).unwrap();
     let response = registration(&mut token, challenge, alternate);
-    server
+    let record = server
         .finish_registration(pending, &response, month())
         .unwrap();
+    let descriptor = server
+        .registered_public_credential(MEMBER, record.credential_id())
+        .unwrap();
+    assert_eq!(
+        descriptor.origins(),
+        &[format!("{ORIGIN}/"), format!("{alternate}/")]
+    );
     let (challenge, pending) = server.start_authentication(MEMBER).unwrap();
     let response = assertion(&mut token, challenge, alternate);
     server.finish_authentication(pending, &response).unwrap();

@@ -66,6 +66,7 @@ pub struct Passkeys<S> {
     store: S,
     community: String,
     rp_id: String,
+    origins: Vec<String>,
     webauthn: Webauthn,
     instance: Arc<()>,
     names: BTreeMap<Uuid, String>,
@@ -169,6 +170,10 @@ impl<S: CredentialStore> Passkeys<S> {
             store,
             community,
             rp_id: rp_id.into(),
+            origins: origins
+                .iter()
+                .map(|origin| origin.as_str().to_owned())
+                .collect(),
             webauthn,
             instance: Arc::new(()),
             names: BTreeMap::new(),

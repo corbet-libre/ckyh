@@ -2,6 +2,19 @@
 use super::*;
 
 impl<S: CredentialStore> Passkeys<S> {
+    /// Export the exact currently active credential for Policy's signed binding.
+    /// Call while holding the original Membership lease. The descriptor is only
+    /// verification material, not a membership or revocation-freshness proof.
+    pub fn public_credential(
+        &self,
+        authentication: &Authentication,
+    ) -> Result<crate::lineage::PublicCredential, Error> {
+        if authentication.community() != self.community {
+            return Err(Error::NotFound);
+        }
+        self.registered_public_credential(authentication.member(), authentication.credential_id())
+    }
+
     /// Read a live registered public key for the owning Membership/Policy service.
     /// The caller must hold its member-bound issuance lease and authenticate the
     /// member mapping. This public descriptor proves neither login nor admission;
