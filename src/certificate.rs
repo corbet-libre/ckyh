@@ -77,6 +77,7 @@ pub struct RegistrationCertificate {
     body: Body,
 }
 impl RegistrationCertificate {
+    #[cfg(feature = "server")]
     pub(crate) fn new(key: PublicCredential, pseudonym: &str) -> Result<Self, InvalidCertificate> {
         let body = Body {
             purpose: PURPOSE.into(),
@@ -111,6 +112,7 @@ impl RegistrationCertificate {
     /// Sign through the existing durable owner; no second secret or key ring.
     /// The issuer's standard maximum validity bounds certificate expiry. This
     /// lifetime is independent of Policy epochs; renewal rereads a live key.
+    #[cfg(feature = "certificate-signing")]
     pub async fn sign<S: csgn::Store>(
         &self,
         signer: &mut csgn::PersistentSigner<S>,

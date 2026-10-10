@@ -13,16 +13,21 @@ include = ["Cargo.toml", "src/**", "docs/**", "README.md", "LICENSE", "LICENSE.m
 [lib]
 crate-type = ["rlib"]
 
+[features]
+default = ["server"]
+server = ["certificate-signing", "dep:crlt", "dep:serde_cbor_2", "dep:tokio", "dep:tracing", "dep:webauthn-rs", "dep:webauthn-rs-core"]
+certificate-signing = ["csgn/signer"]
+
 [dependencies]
-csgn = { git = "https://git.corbet.ch/corbet-foss/csgn", branch = "main", default-features = false, features = ["signer"] }
-crlt = { git = "https://git.corbet.ch/corbet-foss/crlt", branch = "main" }
+csgn = { git = "https://git.corbet.ch/corbet-foss/csgn", branch = "main", default-features = false }
+crlt = { git = "https://git.corbet.ch/corbet-foss/crlt", branch = "main", optional = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_cbor_2 = "0.13"
-tokio = { version = "1", features = ["rt-multi-thread"] }
-tracing = { version = "0.1", default-features = false, features = ["std"] }
-webauthn-rs = { version = "0.5.5", default-features = false, features = ["danger-credential-internals", "conditional-ui"] }
-webauthn-rs-core = "0.5.5"
+serde_cbor_2 = { version = "0.13", optional = true }
+tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
+tracing = { version = "0.1", default-features = false, features = ["std"], optional = true }
+webauthn-rs = { version = "0.5.5", default-features = false, features = ["danger-credential-internals", "conditional-ui"], optional = true }
+webauthn-rs-core = { version = "0.5.5", optional = true }
 passkey-types = "0.4"
 ciborium = "0.2"
 webauthn-rs-proto = "0.5.5"
@@ -30,7 +35,7 @@ p256 = { version = "0.13", default-features = false, features = ["ecdsa", "pkcs8
 ring = { version = "0.17", features = ["wasm32_unknown_unknown_js"] }
 pkcs1 = { version = "0.7", features = ["pkcs8"] }
 
-[dev-dependencies]
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 coset = "0.3"
 openssl = "0.10"
 async-trait = "0.1"

@@ -10,32 +10,50 @@ pub mod certificate;
 /// Portable verification of passkey-signed lineage challenges.
 pub mod lineage;
 
+#[cfg(feature = "server")]
 mod libsql_store;
+#[cfg(feature = "server")]
 mod model;
+#[cfg(feature = "server")]
 mod registered;
+#[cfg(feature = "server")]
 mod response;
+#[cfg(feature = "server")]
 mod store;
 
+#[cfg(feature = "server")]
 use std::collections::BTreeMap;
+#[cfg(feature = "server")]
 use std::sync::Arc;
+#[cfg(feature = "server")]
 use std::time::{Duration, Instant};
 
+#[cfg(feature = "server")]
 use serde::Deserialize;
+#[cfg(feature = "server")]
 use webauthn_rs::prelude::{
     AuthenticationResult, Credential, DiscoverableAuthentication, PasskeyAuthentication,
     PasskeyRegistration, Webauthn, WebauthnBuilder, WebauthnError,
 };
+#[cfg(feature = "server")]
 use webauthn_rs_core::internals::AuthenticatorData;
+#[cfg(feature = "server")]
 use webauthn_rs_core::proto::Registration;
 
+#[cfg(feature = "server")]
 pub use libsql_store::{LIBSQL_SCHEMA, LibsqlStore};
+#[cfg(feature = "server")]
 pub use model::{Authentication, CreationMonth, Error, StoredPasskey};
+#[cfg(feature = "server")]
 pub use response::{PublicKeyCredential, RegisterPublicKeyCredential};
+#[cfg(feature = "server")]
 pub use store::CredentialStore;
+#[cfg(feature = "server")]
 pub use webauthn_rs::prelude::{
     CreationChallengeResponse, CredentialID, RequestChallengeResponse, Url, Uuid,
 };
 
+#[cfg(feature = "server")]
 const CEREMONY_LIFETIME: Duration = Duration::from_secs(300);
 
 /// A community-scoped server facade. The store may be shared across communities.
@@ -43,6 +61,7 @@ const CEREMONY_LIFETIME: Duration = Duration::from_secs(300);
 /// The caller authorizes registration, listing and revocation. In particular,
 /// adding a passkey requires a live member session authorized outside ckyh.
 /// A synced passkey ecosystem is one device; no manual key approval is involved.
+#[cfg(feature = "server")]
 pub struct Passkeys<S> {
     store: S,
     community: String,
@@ -59,6 +78,7 @@ pub struct Passkeys<S> {
 /// ```compile_fail
 /// fn copy(state: ckyh::PendingRegistration) { let _ = state.clone(); }
 /// ```
+#[cfg(feature = "server")]
 pub struct PendingRegistration {
     instance: Arc<()>,
     started: Instant,
@@ -80,6 +100,7 @@ pub struct PendingRegistration {
 ///     let _ = serde_json::to_string(&state);
 /// }
 /// ```
+#[cfg(feature = "server")]
 pub struct PendingAuthentication {
     instance: Arc<()>,
     started: Instant,
@@ -98,12 +119,14 @@ pub struct PendingAuthentication {
 ///     let _ = serde_json::to_string(&state);
 /// }
 /// ```
+#[cfg(feature = "server")]
 pub struct PendingDiscoverableAuthentication {
     instance: Arc<()>,
     started: Instant,
     state: DiscoverableAuthentication,
 }
 
+#[cfg(feature = "server")]
 impl<S: CredentialStore> Passkeys<S> {
     /// Configure a community's RP ID and exact HTTPS origins.
     ///
@@ -508,12 +531,14 @@ impl<S: CredentialStore> Passkeys<S> {
     }
 }
 
+#[cfg(feature = "server")]
 #[derive(Deserialize)]
 struct AttestationEnvelope<'a> {
     #[serde(rename = "authData", borrow)]
     auth_data: &'a [u8],
 }
 
+#[cfg(feature = "server")]
 fn verification_error(error: WebauthnError) -> Error {
     match error {
         WebauthnError::UserNotVerified => Error::UserVerificationRequired,
@@ -522,6 +547,7 @@ fn verification_error(error: WebauthnError) -> Error {
     }
 }
 
+#[cfg(feature = "server")]
 fn quiet<T>(operation: impl FnOnce() -> T) -> T {
     // Upstream tracing can include credential data. These operations are synchronous,
     // so a scoped empty dispatcher covers the whole verification without changing
@@ -532,5 +558,5 @@ fn quiet<T>(operation: impl FnOnce() -> T) -> T {
     )
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "server"))]
 mod tests;
