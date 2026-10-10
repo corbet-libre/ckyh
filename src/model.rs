@@ -1,5 +1,7 @@
 use std::fmt;
 
+mod certificate;
+
 use serde::{Deserialize, Serialize};
 use webauthn_rs::prelude::{AttestationFormat, COSEKey, Credential, CredentialID, Passkey, Uuid};
 use webauthn_rs_core::proto::UserVerificationPolicy;

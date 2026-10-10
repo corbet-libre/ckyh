@@ -5,8 +5,14 @@
 //! to enrol a device. See `docs/CONTRACT.md` for storage and integration obligations.
 #![forbid(unsafe_code)]
 
+/// Registration certificates carried with offline passkey assertions.
+pub mod certificate;
+/// Portable verification of passkey-signed lineage challenges.
+pub mod lineage;
+
 mod libsql_store;
 mod model;
+mod registered;
 mod response;
 mod store;
 
