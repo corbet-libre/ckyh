@@ -18,6 +18,10 @@ fn wallet(store: MemoryStore) -> Passkeys<MemoryStore> {
 fn wallet_certificate_uses_only_the_actual_current_wallet_key_and_local_member() {
     let store = MemoryStore::default();
     let wallet = wallet(store.clone());
+    assert_eq!(
+        wallet.wallet_configuration().unwrap(),
+        (WALLET_RP, &[format!("{WALLET_ORIGIN}/")][..])
+    );
     let mut token = token();
     let (challenge, pending) = wallet.start_registration(MEMBER).unwrap();
     let response = registration(&mut token, challenge, WALLET_ORIGIN);
@@ -35,6 +39,7 @@ fn wallet_certificate_uses_only_the_actual_current_wallet_key_and_local_member()
     assert_eq!(projected.credential_id(), record.credential_id().as_ref());
 
     let community = service(store, "community");
+    assert!(community.wallet_configuration().is_err());
     assert!(
         community
             .wallet_registration_certificate(&authentication)

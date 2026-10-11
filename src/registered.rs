@@ -2,6 +2,16 @@
 use super::*;
 
 impl<S: CredentialStore> Passkeys<S> {
+    /// Observe the exact retained relying-party configuration of a wallet owner.
+    /// These public strings grant no authentication; the trusted host compares
+    /// them with its explicit wallet publication configuration at construction.
+    pub fn wallet_configuration(&self) -> Result<(&str, &[String]), Error> {
+        if self.community != "wallet" {
+            return Err(Error::Configuration);
+        }
+        Ok((&self.rp_id, &self.origins))
+    }
+
     /// Project only the authenticated current key in the isolated wallet scope.
     /// The wallet-local UUID comes from the original opaque authentication;
     /// callers cannot substitute a community pseudonym or another account.
