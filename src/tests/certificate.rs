@@ -1,6 +1,7 @@
 //! A genuine issuer signature must not bypass the certificate's scoped format.
 use super::*;
 use crate::certificate::{InvalidCertificate, verify};
+use serde_json::json;
 
 const NOW: u64 = 1_800_000_000;
 const MEMBER_NAME: &str = "community-pseudonym";
