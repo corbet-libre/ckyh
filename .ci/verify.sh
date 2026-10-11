@@ -11,6 +11,8 @@ node --test .github/test-auto-merge.mjs
 rustc --version --verbose
 cargo fetch --locked
 cargo fmt --check
+cargo check --locked --no-default-features --lib
+cargo test --locked --no-default-features --lib
 cargo clippy --locked --all-targets -- -D warnings
 cargo test --locked
 

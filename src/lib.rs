@@ -20,7 +20,6 @@ mod model;
 mod registered;
 #[cfg(feature = "server")]
 pub use initial_creation::InitialCreationState;
-#[cfg(feature = "server")]
 mod response;
 #[cfg(feature = "server")]
 mod store;
@@ -48,7 +47,6 @@ use webauthn_rs_core::proto::Registration;
 pub use libsql_store::{LIBSQL_SCHEMA, LibsqlStore};
 #[cfg(feature = "server")]
 pub use model::{Authentication, CreationMonth, Error, StoredPasskey};
-#[cfg(feature = "server")]
 pub use response::{PublicKeyCredential, RegisterPublicKeyCredential};
 #[cfg(feature = "server")]
 pub use store::CredentialStore;
