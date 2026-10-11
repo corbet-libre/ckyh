@@ -559,6 +559,31 @@ fn rs256_original_registration_login_and_portable_spki_verification_interoperate
     let valid = witness(&response);
     verify(&descriptor, &valid, challenge).unwrap();
     capture("rs256", &descriptor, &valid, challenge);
+    // The certificate path must retain this genuinely registered RSA key too,
+    // including the same original assertion verifier and signed public scope.
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let now = 1_800_000_000;
+    let projected = server
+        .registration_certificate(MEMBER, authentication.credential_id(), "rsa-member")
+        .unwrap();
+    let mut signer = runtime
+        .block_on(csgn::PersistentSigner::create(
+            csgn::MemoryStore::default(),
+            "one",
+            csgn::SecretKey::from_seed(&mut [51; 32]),
+            now,
+            1000,
+        ))
+        .unwrap();
+    let bytes = runtime.block_on(projected.sign(&mut signer, now)).unwrap();
+    let certificate =
+        crate::certificate::verify(signer.key_ring().unwrap(), &bytes, "rsa-member", now).unwrap();
+    assert_eq!(certificate.member(), "rsa-member");
+    assert_eq!(
+        certificate.credential_id(),
+        authentication.credential_id().as_ref()
+    );
+    certificate.assertion(&valid, challenge, now).unwrap();
     let mut wrong = descriptor;
     wrong.algorithm = webauthn_rs_proto::COSEAlgorithm::ES256;
     assert!(verify(&wrong, &valid, challenge).is_err());

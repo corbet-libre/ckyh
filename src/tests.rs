@@ -1,4 +1,5 @@
 use super::*;
+mod certificate;
 mod lineage;
 mod wallet_certificate;
 use std::collections::{BTreeSet, HashMap};
