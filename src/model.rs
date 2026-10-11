@@ -29,6 +29,8 @@ pub enum Error {
     NotFound,
     /// A credential ID already exists in this community, including tombstones.
     DuplicateCredential,
+    /// Initial ownership or an immutable publication already has a different winner.
+    Conflict,
     /// Ceremony state belongs to another facade instance.
     WrongCeremony,
     /// The five-minute server-side ceremony deadline elapsed.
@@ -50,6 +52,7 @@ impl fmt::Display for Error {
             Self::NoActivePasskeys => "no active passkeys",
             Self::NotFound => "passkey not found",
             Self::DuplicateCredential => "passkey already registered",
+            Self::Conflict => "initial passkey creation conflict",
             Self::WrongCeremony => "ceremony belongs to another instance",
             Self::Expired => "passkey ceremony expired",
             Self::Storage => "passkey storage failed",
@@ -131,6 +134,15 @@ pub struct StoredPasskey {
     authenticator_type: Option<String>,
     created: CreationMonth,
     pub(crate) revoked: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) initial_creation: Option<InitialCreationRecord>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct InitialCreationRecord {
+    pub(crate) seed: [u8; 32],
+    pub(crate) publication: Option<[u8; 32]>,
 }
 
 impl StoredPasskey {
@@ -154,6 +166,7 @@ impl StoredPasskey {
             authenticator_type,
             created,
             revoked: false,
+            initial_creation: None,
         }
     }
 

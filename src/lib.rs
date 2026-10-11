@@ -11,11 +11,15 @@ pub mod certificate;
 pub mod lineage;
 
 #[cfg(feature = "server")]
+mod initial_creation;
+#[cfg(feature = "server")]
 mod libsql_store;
 #[cfg(feature = "server")]
 mod model;
 #[cfg(feature = "server")]
 mod registered;
+#[cfg(feature = "server")]
+pub use initial_creation::InitialCreationState;
 #[cfg(feature = "server")]
 mod response;
 #[cfg(feature = "server")]
@@ -86,6 +90,8 @@ pub struct PendingRegistration {
     member: Uuid,
     state: PasskeyRegistration,
     authorizer: Option<Authentication>,
+    first_only: bool,
+    initial_seed: Option<[u8; 32]>,
 }
 
 /// Single-use, expiring authentication state. Never send this to a client.
@@ -198,7 +204,19 @@ impl<S: CredentialStore> Passkeys<S> {
         &self,
         member: Uuid,
     ) -> Result<(CreationChallengeResponse, PendingRegistration), Error> {
+        self.registration(member, false, None)
+    }
+
+    fn registration(
+        &self,
+        member: Uuid,
+        first_only: bool,
+        initial_seed: Option<[u8; 32]>,
+    ) -> Result<(CreationChallengeResponse, PendingRegistration), Error> {
         let records = self.list(member)?;
+        if first_only && !records.is_empty() {
+            return Err(Error::Conflict);
+        }
         let excluded = records.iter().map(|r| r.credential_id.clone()).collect();
         let label = member.to_string();
         let (mut challenge, state) = quiet(|| {
@@ -225,6 +243,8 @@ impl<S: CredentialStore> Passkeys<S> {
                 member,
                 state,
                 authorizer: None,
+                first_only,
+                initial_seed,
             },
         ))
     }
@@ -290,7 +310,7 @@ impl<S: CredentialStore> Passkeys<S> {
         let authenticator_type = aaguid
             .filter(|id| !id.is_nil())
             .and_then(|id| self.names.get(&id).cloned());
-        let record = StoredPasskey::new(
+        let mut record = StoredPasskey::new(
             self.community.clone(),
             pending.member,
             self.rp_id.clone(),
@@ -298,7 +318,18 @@ impl<S: CredentialStore> Passkeys<S> {
             authenticator_type,
             created,
         );
-        if let Some(authorizer) = pending.authorizer {
+        record.initial_creation = pending
+            .initial_seed
+            .map(|seed| model::InitialCreationRecord {
+                seed,
+                publication: None,
+            });
+        if pending.first_only {
+            if pending.authorizer.is_some() {
+                return Err(Error::Configuration);
+            }
+            self.store.insert_initial(record.clone())?;
+        } else if let Some(authorizer) = pending.authorizer {
             self.store.insert_authorized(record.clone(), &authorizer)?;
         } else {
             self.store.insert(record.clone())?;

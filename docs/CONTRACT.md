@@ -40,6 +40,36 @@ credential ID. A cloned receipt retains that same binding.
 It is an in-process result, not a signed proof or a bearer token. cvld must still
 check admission, gates, session validity and other membership policy.
 
+## Initial creation provenance
+
+`start_initial_registration(member, seed)` is a first-only registration path.
+Its optional nonzero 32-byte caller commitment is bound to the original pending
+ceremony and stored with the verified first credential in the same transaction.
+`CredentialStore::insert_initial` must atomically refuse ANY existing credential
+for that community/member, including revoked tombstones, across independent
+pools/processes. Unsupported stores refuse. The libSQL adapter performs the
+indexed member lookup, credential uniqueness and insert under BEGIN IMMEDIATE;
+no new table or migration is required. Membership uses this path even without
+a commitment; its ordinary and seeded first ceremonies cannot race into two keys.
+The general caller-authorized registration API retains its existing semantics.
+
+`initial_creation(authentication)` reads only the exact live authenticating key.
+`bind_initial_publication(authentication, expected_seed, publication)` atomically
+claims one nonzero opaque publication digest. Equal retry returns its winner;
+another seed/digest conflicts. Additional keys, legacy keys without metadata,
+revoked keys and another owner's authentication cannot acquire that authority.
+Revocation preserves the immutable metadata. These operations return a private,
+nonserializable `InitialCreationState`, with only seed/publication getters; it is
+not a root, signature, admission proof, device grant or recovery capability.
+
+The caller owns domain-separated, opaque PER-COMMUNITY commitments and keeps the
+actual private candidate/publication evidence locally before requesting binding.
+Do not reuse a global identifier or persist raw roots/evidence here. A lost reply
+can be reconciled through fresh genuine authentication and reading the actual
+winner. Missing winning private state cannot be rebuilt from these digests, and
+no reset or new-genesis authorization is supplied. The embedding host remains
+responsible for original session expiry, current policy and final output checks.
+
 ## Verification and ceremony lifetime
 
 All cryptographic operations, challenge generation, origin/RP validation,

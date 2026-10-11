@@ -15,6 +15,15 @@ pub trait CredentialStore {
     /// an existing row, including a revocation tombstone.
     fn insert(&self, record: StoredPasskey) -> Result<(), Error>;
 
+    /// Insert the first credential only while this community/member has NO
+    /// credential rows, including tombstones. Serialize that indexed emptiness
+    /// check, credential uniqueness and insertion in ONE transaction across
+    /// pools/processes. This may carry an initial opaque creation commitment.
+    /// Unsupported stores refuse; falling back to ordinary insertion is unsafe.
+    fn insert_initial(&self, _record: StoredPasskey) -> Result<(), Error> {
+        Err(Error::Configuration)
+    }
+
     /// Insert an additional key only while the exact authorizing key is active.
     /// Check ownership, community and RP against the new record, and revocation,
     /// in the same serializable transaction as uniqueness checking and insertion.

@@ -49,12 +49,27 @@ impl LibsqlStore {
         &self,
         record: StoredPasskey,
         authorizer: Option<&Authentication>,
+        first_only: bool,
     ) -> Result<(), Error> {
         self.check_scope(&record.community)?;
+        if record.initial_creation.is_some() && !first_only {
+            return Err(Error::Configuration);
+        }
         let bytes = serde_cbor_2::to_vec(&record).map_err(|_| Error::Storage)?;
         self.run(async {
             let mut tx = self.scope.tx().await.map_err(|_| Error::Storage)?;
             let result = async {
+                // Covers both seeded and ordinary first membership enrolment.
+                // Tombstones permanently occupy this first-registration slot.
+                if first_only
+                    && !tx
+                        .query(LIST, [record.member.to_string()])
+                        .await
+                        .map_err(|_| Error::Storage)?
+                        .is_empty()
+                {
+                    return Err(Error::Conflict);
+                }
                 if let Some(auth) = authorizer {
                     if auth.community() != record.community || auth.member() != record.member {
                         return Err(Error::NotFound);
@@ -169,7 +184,11 @@ impl CredentialStore for LibsqlStore {
     }
 
     fn insert(&self, record: StoredPasskey) -> Result<(), Error> {
-        self.insert_checked(record, None)
+        self.insert_checked(record, None, false)
+    }
+
+    fn insert_initial(&self, record: StoredPasskey) -> Result<(), Error> {
+        self.insert_checked(record, None, true)
     }
 
     fn insert_authorized(
@@ -177,7 +196,7 @@ impl CredentialStore for LibsqlStore {
         record: StoredPasskey,
         authorizer: &Authentication,
     ) -> Result<(), Error> {
-        self.insert_checked(record, Some(authorizer))
+        self.insert_checked(record, Some(authorizer), false)
     }
 
     fn update<T>(

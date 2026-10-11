@@ -6,6 +6,8 @@ use tempfile::TempDir;
 use tokio::runtime::{Builder, Runtime};
 use webauthn_authenticator_rs::{AuthenticatorBackend, softtoken::SoftToken};
 
+mod initial_creation;
+
 const COMMUNITY: &str = "one";
 const MEMBER: Uuid = Uuid::from_u128(1);
 const OTHER: Uuid = Uuid::from_u128(2);
