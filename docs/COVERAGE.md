@@ -28,6 +28,14 @@ executes, or its supporting code or dependency snapshot changes. A line exceptio
 cannot hide a branch. Every other emitted production counter must be positive.
 No whole function or file is excluded, and every defense remains in production.
 
+The current proof refresh retains exactly the same eight entries and branch
+coordinates. Only their shifted line locations and full supporting source/lock
+hashes changed. The resolved upstream versions remain `webauthn-rs` and
+`webauthn-rs-core` 0.5.5; their local registry archives match the committed
+checksums. Initial-registration provenance and wallet projection do not alter
+these invariants. The new signed top-level-origin check has no exception.
+This refresh is source evidence, not a coverage pass for the current revision.
+
 ### Repeated origin validation
 
 `Passkeys::new` first validates every origin through `WebauthnBuilder::new`.

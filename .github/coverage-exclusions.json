@@ -1,86 +1,86 @@
 [
   {
     "file": "src/lib.rs",
-    "line": 132,
+    "line": 166,
     "source": ".map_err(|_| Error::Configuration)?",
     "target": "native",
     "reason": "The identical immutable RP/origin pair already passed the same deterministic upstream builder in the preceding loop.",
     "evidence": "docs/COVERAGE.md#repeated-origin-validation",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/lib.rs": "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42",
+      "src/tests.rs": "9696c4d971121c9591d740928cfd7711cdf44d49f8845a657e0bb9913707ceed",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "71157630e9f226fe5fcb07eb1d19841356d691361f6eaa68c77125e01306b7d1"
+      "Cargo.lock": "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
     }
   },
   {
     "file": "src/lib.rs",
-    "line": 219,
+    "line": 271,
     "source": "return Err(Error::NotFound);",
     "target": "native",
     "reason": "The owned authorizer returned by self.list already passed check_record with this exact RP; no intervening read or mutation occurs.",
     "evidence": "docs/COVERAGE.md#already-validated-authorizer-rp",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/lib.rs": "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42",
+      "src/tests.rs": "9696c4d971121c9591d740928cfd7711cdf44d49f8845a657e0bb9913707ceed",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "71157630e9f226fe5fcb07eb1d19841356d691361f6eaa68c77125e01306b7d1"
+      "Cargo.lock": "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
     }
   },
   {
     "file": "src/lib.rs",
-    "line": 244,
+    "line": 300,
     "source": "return Err(Error::UserVerificationRequired);",
     "target": "native",
     "reason": "Required UV was verified by the real upstream registration before a Credential is returned.",
     "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/lib.rs": "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42",
+      "src/tests.rs": "9696c4d971121c9591d740928cfd7711cdf44d49f8845a657e0bb9913707ceed",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "71157630e9f226fe5fcb07eb1d19841356d691361f6eaa68c77125e01306b7d1"
+      "Cargo.lock": "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
     }
   },
   {
     "file": "src/lib.rs",
-    "line": 250,
+    "line": 306,
     "source": ".map_err(|_| Error::VerificationFailed)?;",
     "target": "native",
     "reason": "The same immutable CBOR and borrowed authData field already decoded successfully in upstream registration.",
     "evidence": "docs/COVERAGE.md#repeated-attestation-envelope-decoding",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/lib.rs": "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42",
+      "src/tests.rs": "9696c4d971121c9591d740928cfd7711cdf44d49f8845a657e0bb9913707ceed",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "71157630e9f226fe5fcb07eb1d19841356d691361f6eaa68c77125e01306b7d1"
+      "Cargo.lock": "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
     }
   },
   {
     "file": "src/lib.rs",
-    "line": 435,
+    "line": 510,
     "source": "return Err(Error::UserVerificationRequired);",
     "target": "native",
     "reason": "Both upstream authentication flows require and verify UV before returning the AuthenticationResult.",
     "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/lib.rs": "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42",
+      "src/tests.rs": "9696c4d971121c9591d740928cfd7711cdf44d49f8845a657e0bb9913707ceed",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "71157630e9f226fe5fcb07eb1d19841356d691361f6eaa68c77125e01306b7d1"
+      "Cargo.lock": "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
     }
   },
   {
     "file": "src/lib.rs",
-    "line": 218,
+    "line": 270,
     "source": "if authorizer.rp_id != self.rp_id {",
     "target": "native",
     "reason": "The owned authorizer returned by self.list already passed check_record with this exact RP; no intervening read or mutation occurs.",
     "evidence": "docs/COVERAGE.md#already-validated-authorizer-rp",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/lib.rs": "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42",
+      "src/tests.rs": "9696c4d971121c9591d740928cfd7711cdf44d49f8845a657e0bb9913707ceed",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "71157630e9f226fe5fcb07eb1d19841356d691361f6eaa68c77125e01306b7d1"
+      "Cargo.lock": "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
     },
     "branch": {
       "block": 0,
@@ -89,16 +89,16 @@
   },
   {
     "file": "src/lib.rs",
-    "line": 243,
+    "line": 299,
     "source": "if !credential.user_verified {",
     "target": "native",
     "reason": "Required UV was verified by the real upstream registration before a Credential is returned.",
     "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/lib.rs": "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42",
+      "src/tests.rs": "9696c4d971121c9591d740928cfd7711cdf44d49f8845a657e0bb9913707ceed",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "71157630e9f226fe5fcb07eb1d19841356d691361f6eaa68c77125e01306b7d1"
+      "Cargo.lock": "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
     },
     "branch": {
       "block": 0,
@@ -107,16 +107,16 @@
   },
   {
     "file": "src/lib.rs",
-    "line": 434,
+    "line": 509,
     "source": "if !verified.user_verified() {",
     "target": "native",
     "reason": "Both upstream authentication flows require and verify UV before returning the AuthenticationResult.",
     "evidence": "docs/COVERAGE.md#user-verification-after-upstream-verification",
     "evidence_sources": {
-      "src/lib.rs": "7e453d7060ff311ad604a912dfef752b3a3284e9cc562f429cfa2f2c0d748ebb",
-      "src/tests.rs": "e1e6294d7bb8e9411a94ea9b610c40f5a56dfc30823477be6544810d1b0c8bcc",
+      "src/lib.rs": "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42",
+      "src/tests.rs": "9696c4d971121c9591d740928cfd7711cdf44d49f8845a657e0bb9913707ceed",
       "src/tests/discoverable.rs": "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535",
-      "Cargo.lock": "71157630e9f226fe5fcb07eb1d19841356d691361f6eaa68c77125e01306b7d1"
+      "Cargo.lock": "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
     },
     "branch": {
       "block": 0,
