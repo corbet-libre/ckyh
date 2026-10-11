@@ -1,5 +1,7 @@
 //! Keyhole certificates use the existing csgn signer and published public ring.
-//! They contain no server UUID, and confer neither membership nor current lineage.
+//! Community certificates contain only the enrolled pseudonym. The isolated
+//! wallet certificate contains its wallet-local UUID and never reaches a
+//! community. Neither certificate confers membership or current lineage.
 use crate::lineage::{Assertion, PublicCredential, VerifiedAssertion};
 use serde::{Deserialize, Serialize};
 
@@ -100,7 +102,7 @@ impl RegistrationCertificate {
     pub fn community(&self) -> &str {
         &self.body.community
     }
-    /// Genuine enrolment pseudonym supplied by Membership, not its UUID.
+    /// Enrolled community pseudonym, or the isolated authenticated wallet UUID.
     pub fn member(&self) -> &str {
         &self.body.member
     }

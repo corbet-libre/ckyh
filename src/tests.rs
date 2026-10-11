@@ -1,5 +1,6 @@
 use super::*;
 mod lineage;
+mod wallet_certificate;
 use std::collections::{BTreeSet, HashMap};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};

@@ -2,6 +2,23 @@
 use super::*;
 
 impl<S: CredentialStore> Passkeys<S> {
+    /// Project only the authenticated current key in the isolated wallet scope.
+    /// The wallet-local UUID comes from the original opaque authentication;
+    /// callers cannot substitute a community pseudonym or another account.
+    /// The wallet owner must retain its session/revocation lock through signing
+    /// and recheck eligibility, the live key and time before returning bytes.
+    pub fn wallet_registration_certificate(
+        &self,
+        authentication: &Authentication,
+    ) -> Result<crate::certificate::RegistrationCertificate, Error> {
+        if self.community != "wallet" || authentication.community() != "wallet" {
+            return Err(Error::NotFound);
+        }
+        let key = self.public_credential(authentication)?;
+        crate::certificate::RegistrationCertificate::new(key, &authentication.member().to_string())
+            .map_err(|_| Error::VerificationFailed)
+    }
+
     /// Export the exact currently active credential for Policy's signed binding.
     /// Call while holding the original Membership lease. The descriptor is only
     /// verification material, not a membership or revocation-freshness proof.
