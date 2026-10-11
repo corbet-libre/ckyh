@@ -15,6 +15,20 @@ use serde_json::{Map, Value};
 #[cfg(feature = "server")]
 use crate::Error;
 
+/// Online ceremonies have the same top-level-only boundary as offline proofs.
+/// Upstream's assertion verifier does not enforce its registration cross-origin
+/// restriction. Parse the original signed bytes with its maintained type and
+/// check our configured origins before any credential insertion/counter update.
+#[cfg(feature = "server")]
+pub(crate) fn check_ceremony_origin(raw: &[u8], origins: &[String]) -> Result<(), Error> {
+    if raw.len() > 16384 {
+        return Err(Error::VerificationFailed);
+    }
+    let client: webauthn_rs_proto::CollectedClientData =
+        serde_json::from_slice(raw).map_err(|_| Error::VerificationFailed)?;
+    crate::lineage::ceremony_origin(&client, raw, origins).map_err(|_| Error::VerificationFailed)
+}
+
 struct CredentialVisitor<T>(PhantomData<T>);
 
 impl<'de, T: DeserializeOwned> Visitor<'de> for CredentialVisitor<T> {

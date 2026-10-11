@@ -335,6 +335,7 @@ fn signed_vault_frame_is_refused_even_with_its_exact_configured_parent() {
     // The same ordinary top-level popup route applies in every browser. A
     // matching parent does not authorize an embedded ceremony.
     let (request, pending) = server.start_authentication(MEMBER).unwrap();
+    let before = serde_json::to_value(server.list(MEMBER).unwrap()).unwrap();
     let mut online = assertion(&mut token, request, vault);
     let mut data: serde_json::Value =
         serde_json::from_slice(online.response.client_data_json.as_ref()).unwrap();
@@ -346,6 +347,86 @@ fn signed_vault_frame_is_refused_even_with_its_exact_configured_parent() {
         server.finish_authentication(pending, &online).unwrap_err(),
         Error::VerificationFailed
     );
+    assert_eq!(
+        serde_json::to_value(server.list(MEMBER).unwrap()).unwrap(),
+        before
+    );
+}
+
+#[test]
+fn online_top_level_boundary_preserves_counters_and_allows_the_configured_popup() {
+    let vault = "https://vault.members.example.com";
+    let server = Passkeys::new(
+        MemoryStore::default(),
+        "one",
+        RP,
+        &[Url::parse(ORIGIN).unwrap(), Url::parse(vault).unwrap()],
+    )
+    .unwrap();
+    let mut token = token();
+    let record = enrol(&server, &mut token, MEMBER);
+    let descriptor = server
+        .registered_public_credential(MEMBER, record.credential_id())
+        .unwrap();
+    for discoverable in [false, true] {
+        for (cross_origin, parent) in [
+            (true, None),
+            (true, Some(json!(ORIGIN))),
+            (false, Some(json!(null))),
+        ] {
+            let (mut request, pending) = server.start_discoverable_authentication().unwrap();
+            // This non-resident fixture selects its real registered key locally;
+            // the original server discovery state still has no selected member.
+            request.public_key.allow_credentials =
+                descriptor.request([0; 32]).public_key.allow_credentials;
+            let (request, account) = if discoverable {
+                (request, None)
+            } else {
+                let (request, pending) = server.start_authentication(MEMBER).unwrap();
+                (request, Some(pending))
+            };
+            let mut response = assertion(&mut token, request, vault);
+            response.response.user_handle = Some(MEMBER.as_bytes().to_vec().into());
+            let mut data: serde_json::Value =
+                serde_json::from_slice(response.response.client_data_json.as_ref()).unwrap();
+            data["crossOrigin"] = json!(cross_origin);
+            if let Some(parent) = parent {
+                data["topOrigin"] = parent;
+            }
+            response.response.client_data_json = serde_json::to_vec(&data).unwrap().into();
+            resign(&token, &mut response);
+            let before = serde_json::to_value(server.list(MEMBER).unwrap()).unwrap();
+            let result = if let Some(account) = account {
+                server.finish_authentication(account, &response)
+            } else {
+                server.finish_discoverable_authentication(pending, &response)
+            };
+            assert_eq!(result.unwrap_err(), Error::VerificationFailed);
+            assert_eq!(
+                serde_json::to_value(server.list(MEMBER).unwrap()).unwrap(),
+                before
+            );
+        }
+        let (mut request, pending) = server.start_discoverable_authentication().unwrap();
+        request.public_key.allow_credentials =
+            descriptor.request([0; 32]).public_key.allow_credentials;
+        let (request, account) = if discoverable {
+            (request, None)
+        } else {
+            let (request, pending) = server.start_authentication(MEMBER).unwrap();
+            (request, Some(pending))
+        };
+        let mut response = assertion(&mut token, request, vault);
+        response.response.user_handle = Some(MEMBER.as_bytes().to_vec().into());
+        let authentication = if let Some(account) = account {
+            server.finish_authentication(account, &response)
+        } else {
+            server.finish_discoverable_authentication(pending, &response)
+        }
+        .unwrap();
+        assert_eq!(authentication.member(), MEMBER);
+        assert_eq!(authentication.credential_id(), record.credential_id());
+    }
 }
 
 fn rsa_signature(key: &PKey<openssl::pkey::Private>, response: &mut PublicKeyCredential) {

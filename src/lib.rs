@@ -286,6 +286,10 @@ impl<S: CredentialStore> Passkeys<S> {
         created: CreationMonth,
     ) -> Result<StoredPasskey, Error> {
         self.check_pending(&pending.instance, pending.started)?;
+        response::check_ceremony_origin(
+            response.response.client_data_json.as_ref(),
+            &self.origins,
+        )?;
         let (credential, aaguid) = quiet(|| {
             let passkey = self
                 .webauthn
@@ -419,6 +423,10 @@ impl<S: CredentialStore> Passkeys<S> {
     ) -> Result<Authentication, Error> {
         self.check_pending(&pending.instance, pending.started)?;
         response.check_extensions()?;
+        response::check_ceremony_origin(
+            response.response.client_data_json.as_ref(),
+            &self.origins,
+        )?;
         if response
             .response
             .user_handle
@@ -467,6 +475,10 @@ impl<S: CredentialStore> Passkeys<S> {
     ) -> Result<Authentication, Error> {
         self.check_pending(&pending.instance, pending.started)?;
         response.check_extensions()?;
+        response::check_ceremony_origin(
+            response.response.client_data_json.as_ref(),
+            &self.origins,
+        )?;
         let (member, credential_id) = quiet(|| {
             self.webauthn
                 .identify_discoverable_authentication(response)
