@@ -241,3 +241,106 @@ fn independent_pools_cloned_authenticated_publication_intents_have_one_winner() 
     let winner = first.initial_creation(&auth).unwrap().publication();
     assert!([Some([2; 32]), Some([3; 32])].contains(&winner));
 }
+
+#[test]
+fn invalid_initial_commitments_and_foreign_owners_cannot_change_real_storage() {
+    let fixture = Fixture::new();
+    let store = fixture.store(COMMUNITY);
+    let server = service(store.clone());
+    for (member, seed) in [(Uuid::nil(), None), (MEMBER, Some([0; 32]))] {
+        assert!(matches!(
+            server.start_initial_registration(member, seed),
+            Err(Error::Configuration)
+        ));
+    }
+    assert!(server.list(MEMBER).unwrap().is_empty());
+    let mut device = SoftToken::new(true).unwrap().0;
+    let (challenge, pending) = server
+        .start_initial_registration(MEMBER, Some([1; 32]))
+        .unwrap();
+    server
+        .finish_registration(
+            pending,
+            &creation_response(&mut device, challenge),
+            CreationMonth::new(2026, 9).unwrap(),
+        )
+        .unwrap();
+    let auth = authenticate(&server, &mut device);
+    let original = server.list(MEMBER).unwrap().remove(0);
+    assert_eq!(store.insert(original.clone()), Err(Error::Configuration));
+    assert_eq!(
+        store.insert_authorized(original.clone(), &auth),
+        Err(Error::Configuration)
+    );
+    let foreign = Passkeys::new(
+        fixture.store("foreign"),
+        "foreign",
+        "members.example.com",
+        &[Url::parse(ORIGIN).unwrap()],
+    )
+    .unwrap();
+    assert!(matches!(
+        foreign.initial_creation(&auth),
+        Err(Error::NotFound)
+    ));
+    assert!(matches!(
+        foreign.bind_initial_publication(&auth, [1; 32], [2; 32]),
+        Err(Error::NotFound)
+    ));
+    assert!(foreign.list(MEMBER).unwrap().is_empty());
+    for corrupt_publication in [false, true] {
+        let mut corrupt = original.clone();
+        let initial = corrupt.initial_creation.as_mut().unwrap();
+        if corrupt_publication {
+            initial.publication = Some([0; 32]);
+        } else {
+            initial.seed = [0; 32];
+        }
+        let bytes = serde_cbor_2::to_vec(&corrupt).unwrap();
+        fixture
+            .runtime
+            .block_on(store.scope.execute(
+                UPDATE,
+                params![bytes.clone(), auth.credential_id().as_ref()],
+            ))
+            .unwrap();
+        assert!(matches!(
+            server.initial_creation(&auth),
+            Err(Error::Storage)
+        ));
+        assert!(matches!(
+            server.bind_initial_publication(&auth, [1; 32], [2; 32]),
+            Err(Error::Storage)
+        ));
+        assert_eq!(
+            serde_cbor_2::to_vec(&store.list(COMMUNITY, MEMBER).unwrap().remove(0)).unwrap(),
+            bytes
+        );
+    }
+}
+
+#[test]
+fn first_only_insert_refuses_a_real_incompatible_index_query() {
+    let source = Fixture::new();
+    let original = record(source.store(COMMUNITY));
+    let directory = tempfile::tempdir().unwrap();
+    let runtime = runtime();
+    let url = Url::from_file_path(directory.path().join("broken.db")).unwrap();
+    let db = runtime
+        .block_on(Db::open(Config::new(url.as_str(), "")))
+        .unwrap();
+    // Real SQLite table lacks the record column required by the original LIST.
+    runtime.block_on(db.migrate(&[Migration::new(1, "broken_passkeys", "CREATE TABLE cpky_passkeys (community_id TEXT NOT NULL, member TEXT NOT NULL, credential_id BLOB NOT NULL, PRIMARY KEY (community_id, member, credential_id));")])).unwrap();
+    let store = LibsqlStore::new(&db, COMMUNITY, runtime.handle().clone()).unwrap();
+    assert_eq!(store.insert_initial(original), Err(Error::Storage));
+    assert!(
+        runtime
+            .block_on(
+                store
+                    .scope
+                    .query("SELECT member FROM cpky_passkeys", params![])
+            )
+            .unwrap()
+            .is_empty()
+    );
+}

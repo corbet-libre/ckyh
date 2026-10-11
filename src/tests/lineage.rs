@@ -272,6 +272,80 @@ fn signed_wrong_context_flags_and_client_json_are_refused() {
 }
 
 #[test]
+fn bounded_lineage_inputs_and_well_formed_invalid_signatures_are_refused() {
+    let (server, mut token, _) = setup();
+    let authentication = login(&server, &mut token);
+    let descriptor = server.public_credential(&authentication).unwrap();
+    let challenge = [49; 32];
+    let response = assertion(&mut token, descriptor.request(challenge), ORIGIN);
+    let valid = witness(&response);
+    verify(&descriptor, &valid, challenge).unwrap();
+    for field in 0..6 {
+        let mut changed = descriptor.clone();
+        match field {
+            0 => changed.credential_id.clear(),
+            1 => changed.credential_id = vec![1; 1025],
+            2 => changed.spki = vec![1; 8193],
+            3 => changed.rp_id.clear(),
+            4 => changed.origins.clear(),
+            5 => changed.origins = vec![format!("{ORIGIN}/"); 33],
+            _ => unreachable!(),
+        }
+        assert!(
+            verify(&changed, &valid, challenge).is_err(),
+            "descriptor {field}"
+        );
+    }
+    for field in 0..3 {
+        let mut changed = valid.clone();
+        match field {
+            0 => changed.client_data_json = vec![b' '; 16385],
+            1 => changed.authenticator_data = vec![0; 16385],
+            2 => changed.signature = vec![0; 1025],
+            _ => unreachable!(),
+        }
+        assert!(
+            verify(&descriptor, &changed, challenge).is_err(),
+            "assertion {field}"
+        );
+    }
+    // Preserve valid DER and all ceremony bindings, but alter the signed counter.
+    let mut tampered = valid.clone();
+    tampered.authenticator_data[36] ^= 1;
+    assert!(verify(&descriptor, &tampered, challenge).is_err());
+    verify(&descriptor, &valid, challenge).unwrap();
+}
+
+#[test]
+fn parseable_attested_data_in_an_assertion_is_not_an_authentication() {
+    let server = service(MemoryStore::default(), "one");
+    let mut token = token();
+    let (request, pending) = server.start_registration(MEMBER).unwrap();
+    let registration = registration(&mut token, request, ORIGIN);
+    let object: BTreeMap<String, Value> =
+        serde_cbor_2::from_slice(registration.response.attestation_object.as_ref()).unwrap();
+    let Value::Bytes(attested) = &object["authData"] else {
+        panic!("genuine registration authenticator data")
+    };
+    server
+        .finish_registration(pending, &registration, month())
+        .unwrap();
+    let authentication = login(&server, &mut token);
+    let descriptor = server.public_credential(&authentication).unwrap();
+    let challenge = [50; 32];
+    let mut response = assertion(&mut token, descriptor.request(challenge), ORIGIN);
+    let mut data = response.response.authenticator_data.as_ref().to_vec();
+    assert_eq!(data.len(), 37);
+    data[32] |= 0x40;
+    data.extend_from_slice(&attested[37..]);
+    let parsed = passkey_types::ctap2::AuthenticatorData::from_slice(&data).unwrap();
+    assert!(parsed.attested_credential_data.is_some());
+    response.response.authenticator_data = data.into();
+    resign(&token, &mut response);
+    assert!(verify(&descriptor, &witness(&response), challenge).is_err());
+}
+
+#[test]
 fn signed_vault_frame_is_refused_even_with_its_exact_configured_parent() {
     let vault = "https://vault.members.example.com";
     let server = Passkeys::new(
@@ -584,6 +658,12 @@ fn rs256_original_registration_login_and_portable_spki_verification_interoperate
         authentication.credential_id().as_ref()
     );
     certificate.assertion(&valid, challenge, now).unwrap();
+    let mut malformed = descriptor.clone();
+    malformed.spki = vec![0];
+    assert!(verify(&malformed, &valid, challenge).is_err());
+    let mut tampered = valid.clone();
+    tampered.authenticator_data[36] ^= 1;
+    assert!(verify(&descriptor, &tampered, challenge).is_err());
     let mut wrong = descriptor;
     wrong.algorithm = webauthn_rs_proto::COSEAlgorithm::ES256;
     assert!(verify(&wrong, &valid, challenge).is_err());

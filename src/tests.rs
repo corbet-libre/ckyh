@@ -1309,6 +1309,7 @@ fn public_errors_remain_bounded_static_diagnostics() {
         Error::NoActivePasskeys,
         Error::NotFound,
         Error::DuplicateCredential,
+        Error::Conflict,
         Error::WrongCeremony,
         Error::Expired,
         Error::Storage,
@@ -1358,4 +1359,65 @@ fn malformed_response_fields_return_only_the_boundary_error() {
             assert!(!error.to_string().contains("must-not-escape"));
         }
     }
+}
+
+#[test]
+fn unsupported_initial_store_never_falls_back_to_ordinary_insertion() {
+    let server = service(MemoryStore::default(), "one");
+    let mut token = token();
+    let (request, pending) = server
+        .start_initial_registration(MEMBER, Some([31; 32]))
+        .unwrap();
+    let response = registration(&mut token, request, ORIGIN);
+    assert!(matches!(
+        server.finish_registration(pending, &response, month()),
+        Err(Error::Configuration)
+    ));
+    assert!(server.list(MEMBER).unwrap().is_empty());
+    assert!(server.store.0.lock().unwrap().by_id.is_empty());
+}
+
+#[test]
+fn contradictory_pending_initial_and_additional_ceremonies_never_write() {
+    let (server, mut original, _) = setup();
+    let auth = login(&server, &mut original);
+    let (request, mut pending) = server.start_additional_registration(&auth).unwrap();
+    let mut added = token();
+    let response = registration(&mut added, request, ORIGIN);
+    // Private-state fault injection: no public client can construct PendingRegistration.
+    pending.first_only = true;
+    let before = serde_json::to_vec(&server.list(MEMBER).unwrap()).unwrap();
+    assert!(matches!(
+        server.finish_registration(pending, &response, month()),
+        Err(Error::Configuration)
+    ));
+    assert_eq!(
+        serde_json::to_vec(&server.list(MEMBER).unwrap()).unwrap(),
+        before
+    );
+}
+
+#[test]
+fn oversized_but_genuinely_signed_client_data_never_updates_a_counter() {
+    let (server, mut token, _) = setup();
+    let (request, pending) = server.start_authentication(MEMBER).unwrap();
+    let mut response = assertion(&mut token, request, ORIGIN);
+    let mut client: serde_json::Value =
+        serde_json::from_slice(response.response.client_data_json.as_ref()).unwrap();
+    client["padding"] = serde_json::json!("x".repeat(16385));
+    let raw = serde_json::to_vec(&client).unwrap();
+    // Both shared helper and actual online facade consume the same genuine bytes.
+    let parsed: webauthn_rs_proto::CollectedClientData = serde_json::from_slice(&raw).unwrap();
+    assert!(crate::lineage::ceremony_origin(&parsed, &raw, &[format!("{ORIGIN}/")]).is_err());
+    response.response.client_data_json = raw.into();
+    resign(&token, &mut response);
+    let before = serde_json::to_vec(&server.list(MEMBER).unwrap()).unwrap();
+    assert!(matches!(
+        server.finish_authentication(pending, &response),
+        Err(Error::VerificationFailed)
+    ));
+    assert_eq!(
+        serde_json::to_vec(&server.list(MEMBER).unwrap()).unwrap(),
+        before
+    );
 }
