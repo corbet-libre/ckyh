@@ -144,3 +144,52 @@ fn oversized_certificate_is_refused_without_accepting_any_envelope_or_member() {
         Err(InvalidCertificate)
     ));
 }
+
+#[test]
+fn malformed_stored_curve_point_cannot_be_exported_or_certified() {
+    use webauthn_rs_core::proto::{COSEKey, COSEKeyType};
+    let (server, _, original) = setup();
+    let mut encoded = serde_json::to_value(&original).unwrap();
+    let mut public_key: COSEKey = serde_json::from_value(encoded["public_key"].clone()).unwrap();
+    let COSEKeyType::EC_EC2(point) = &mut public_key.key else {
+        panic!("genuine ES256 registration fixture")
+    };
+    // The trusted-store fault has a valid COSE shape but is not a P-256 point.
+    point.x = vec![0; 32].into();
+    point.y = vec![0; 32].into();
+    assert!(public_key.get_openssl_pkey().is_err());
+    encoded["public_key"] = serde_json::to_value(public_key).unwrap();
+    let corrupt: StoredPasskey = serde_json::from_value(encoded).unwrap();
+    let exact = serde_json::to_vec(&corrupt).unwrap();
+    server
+        .store
+        .update("one", original.credential_id(), |row| {
+            *row = corrupt;
+            Ok(())
+        })
+        .unwrap();
+    assert!(matches!(
+        server.registered_public_credential(MEMBER, original.credential_id()),
+        Err(Error::VerificationFailed)
+    ));
+    assert!(matches!(
+        server.registration_certificate(MEMBER, original.credential_id(), MEMBER_NAME),
+        Err(Error::VerificationFailed)
+    ));
+    assert_eq!(
+        serde_json::to_vec(&server.list(MEMBER).unwrap().remove(0)).unwrap(),
+        exact
+    );
+    server
+        .store
+        .update("one", original.credential_id(), |row| {
+            *row = original.clone();
+            Ok(())
+        })
+        .unwrap();
+    assert!(
+        server
+            .registration_certificate(MEMBER, original.credential_id(), MEMBER_NAME)
+            .is_ok()
+    );
+}
