@@ -9,6 +9,7 @@ python3 .github/check-first-party.py
 python3 .github/test-source-coverage.py
 node --test .github/test-auto-merge.mjs
 rustc --version --verbose
+bash .ci/update-our-crates.sh
 cargo fetch --locked
 cargo fmt --check
 cargo check --locked --no-default-features --lib
