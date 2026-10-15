@@ -46,7 +46,7 @@ use webauthn_rs_core::proto::Registration;
 #[cfg(feature = "server")]
 pub use libsql_store::{LIBSQL_SCHEMA, LibsqlStore};
 #[cfg(feature = "server")]
-pub use model::{Authentication, CreationMonth, Error, StoredPasskey};
+pub use model::{Authentication, CreationMonth, Error, Origin, StoredPasskey};
 pub use response::{PublicKeyCredential, RegisterPublicKeyCredential};
 #[cfg(feature = "server")]
 pub use store::CredentialStore;

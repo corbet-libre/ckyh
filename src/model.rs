@@ -231,13 +231,28 @@ impl fmt::Debug for StoredPasskey {
 
 /// An opaque in-process authentication result. It is not an admission or device grant.
 ///
-/// No public constructor or deserializer exists. Only successful verification and
-/// a committed storage update can produce this result through the facade.
+/// No deserializer exists. Passkey results come only from successful verification and a
+/// committed storage update through the facade; the single other constructor is
+/// `from_device_key`, whose caller carries the proof duty.
 #[derive(Clone)]
 pub struct Authentication {
     community: String,
     member: Uuid,
     credential: CredentialID,
+    origin: Origin,
+}
+
+const DEVICE_KEY_PREFIX: &[u8] = b"device-key:";
+
+/// How an authentication came about. Member-level actions treat both alike; actions that by
+/// design need a human confirmation (device approval and revocation, lineage changes, step-ups)
+/// accept only `Passkey` until the confirmation stamp exists.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Origin {
+    /// A fresh WebAuthn assertion verified by this crate.
+    Passkey,
+    /// Possession of a registered device key, proven by the caller (see `from_device_key`).
+    DeviceKey,
 }
 
 impl Authentication {
@@ -246,7 +261,40 @@ impl Authentication {
             community,
             member,
             credential,
+            origin: Origin::Passkey,
         }
+    }
+
+    /// Authentication by a registered device key. The caller (the community service) must have
+    /// verified a fresh signature of the key over a single-use server nonce AND that the key is
+    /// active for this member in this community; this crate cannot check either. The credential
+    /// id is derived from the key and never matches a stored passkey, so every passkey-only check
+    /// fails closed for this origin.
+    pub fn from_device_key(community: String, member: Uuid, device_key: [u8; 32]) -> Self {
+        let mut id = DEVICE_KEY_PREFIX.to_vec();
+        id.extend_from_slice(&device_key);
+        Self {
+            community,
+            member,
+            credential: CredentialID::from(id),
+            origin: Origin::DeviceKey,
+        }
+    }
+
+    /// How this authentication was obtained.
+    pub fn origin(&self) -> Origin {
+        self.origin
+    }
+
+    /// The device key of a `DeviceKey` authentication; `None` for a passkey.
+    pub fn device_key(&self) -> Option<[u8; 32]> {
+        if self.origin != Origin::DeviceKey {
+            return None;
+        }
+        self.credential
+            .as_ref()
+            .strip_prefix(DEVICE_KEY_PREFIX)
+            .and_then(|key| key.try_into().ok())
     }
 
     /// Exact passkey that authenticated this session. Recheck its current
