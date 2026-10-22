@@ -416,6 +416,50 @@ impl<S: CredentialStore> Passkeys<S> {
     ///
     /// Rechecks revocation and counters against the current row in one atomic
     /// update, so overlapping ceremonies cannot overwrite newer security state.
+    /// Finish a registration and also return an `Authentication` of exactly this credential, so
+    /// the caller can open a session from the UV-required creation ceremony itself (one-ceremony
+    /// registration). The result exists only after the same verification and committed insert as
+    /// `finish_registration`; no second WebAuthn check is made or needed.
+    pub fn finish_registration_authenticated(
+        &self,
+        pending: PendingRegistration,
+        response: &RegisterPublicKeyCredential,
+        created: CreationMonth,
+    ) -> Result<(StoredPasskey, Authentication), Error> {
+        let record = self.finish_registration(pending, response, created)?;
+        let authentication = Authentication::new(
+            self.community.clone(),
+            record.member,
+            record.credential_id.clone(),
+        );
+        Ok((record, authentication))
+    }
+
+    /// Number of live (not revoked) passkeys of `member`.
+    pub fn live_count(&self, member: Uuid) -> Result<usize, Error> {
+        Ok(self
+            .list(member)?
+            .iter()
+            .filter(|record| !record.is_revoked())
+            .count())
+    }
+
+    /// True exactly when `credential` is the only live passkey of `member`.
+    pub fn is_sole_live_credential(
+        &self,
+        member: Uuid,
+        credential: &CredentialID,
+    ) -> Result<bool, Error> {
+        let mut live = self
+            .list(member)?
+            .into_iter()
+            .filter(|record| !record.is_revoked());
+        Ok(match (live.next(), live.next()) {
+            (Some(only), None) => only.credential_id() == credential,
+            _ => false,
+        })
+    }
+
     pub fn finish_authentication(
         &self,
         pending: PendingAuthentication,

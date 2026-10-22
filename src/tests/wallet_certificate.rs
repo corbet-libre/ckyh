@@ -98,3 +98,39 @@ fn wallet_certificate_uses_only_the_actual_current_wallet_key_and_local_member()
         Err(Error::Revoked)
     ));
 }
+
+#[test]
+fn registration_authentication_names_the_new_credential_and_counts_live_passkeys() {
+    let store = MemoryStore::default();
+    let wallet = wallet(store);
+    let mut token = token();
+    assert_eq!(wallet.live_count(MEMBER).unwrap(), 0);
+    let (challenge, pending) = wallet.start_registration(MEMBER).unwrap();
+    let response = registration(&mut token, challenge, WALLET_ORIGIN);
+    let (record, authentication) = wallet
+        .finish_registration_authenticated(pending, &response, month())
+        .unwrap();
+    assert_eq!(authentication.member(), MEMBER);
+    assert_eq!(authentication.credential_id(), record.credential_id());
+    assert_eq!(authentication.origin(), Origin::Passkey);
+    assert_eq!(wallet.live_count(MEMBER).unwrap(), 1);
+    assert!(
+        wallet
+            .is_sole_live_credential(MEMBER, record.credential_id())
+            .unwrap()
+    );
+    // The registration authentication is accepted wherever a login's is.
+    assert!(
+        wallet
+            .wallet_registration_certificate(&authentication)
+            .is_ok()
+    );
+    // A revoked passkey no longer counts, and a foreign id is never the sole credential.
+    wallet.revoke(MEMBER, record.credential_id()).unwrap();
+    assert_eq!(wallet.live_count(MEMBER).unwrap(), 0);
+    assert!(
+        !wallet
+            .is_sole_live_credential(MEMBER, record.credential_id())
+            .unwrap()
+    );
+}
