@@ -119,7 +119,7 @@ categories with no SQL, row contents or upstream source.
 
 [GitHub Actions](https://github.com/corbet-foss/ckyh/actions/workflows/ci.yml) runs
 `cargo fmt --check`, `cargo clippy --locked --all-targets -- -D warnings` and
-`cargo test --locked` on current stable Rust. Builds run in CI, not on workstations.
+`cargo test --locked` on current stable Rust.
 The dependency lock is retained as a CI artifact and committed after resolution.
 
 Tests cover real registration/authentication and persistence round trips; required
