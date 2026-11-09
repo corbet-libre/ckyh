@@ -668,3 +668,82 @@ fn rs256_original_registration_login_and_portable_spki_verification_interoperate
     wrong.algorithm = webauthn_rs_proto::COSEAlgorithm::ES256;
     assert!(verify(&wrong, &valid, challenge).is_err());
 }
+
+/// Stored-assertion verdicts pinned before the move to p256 0.14 (RUSTSEC-2026-0387; the
+/// ES256 key parse, DER signature decode and verify, and the SPKI parse of the RS256 path
+/// that shares p256's pkcs8/der). ES256: cpky's seed-credential vector (seed [7;32]),
+/// RS256: a fixed 2048-bit key signing the same authenticator data and client data with
+/// PKCS#1 v1.5 SHA-256; both cross-checked against OpenSSL.
+mod vectors {
+    use super::*;
+    use webauthn_rs_proto::COSEAlgorithm;
+
+    const CREDENTIAL_ID: &str = "D0zQvz9A60p0NjWLN4Zv1epW31xdnNUocAOXsMu85BA";
+    const ES256_SPKI: &str = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUhjCUvSfLihK1rmSzqmltOfjxHIySDCp-PxTOJPxg8_AAKJUh7IxzgjKyuNbcvOoyksHhiI6tLivwrsTx3tI6w";
+    const ES256_SIGNATURE: &str = "MEUCIEqrGk2mDCpyQlttcSz3JTok3Ae2STTJnlsj_U93zvy3AiEA9bTVDkaN6Zc2zWYm_-MmiVG9IrB92_x2XworK_hQKT0";
+    const RS256_SPKI: &str = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAk3YylPKsEDb7eDToHelrb1_pXtpqY4UrdqTC6hMZOLsYhOoyevs4U6TW-OZFGwYyQqzsT_Pa7k0559exeLIv_GRCf2xWM4nRYg4gpfvrGfWYL9ywKp0mv0MsxIVamjc4Ut5Y1c-OnzQwMBg579Ft8D_lBdn0S4jU_jKsSoS1Ys-dfdDV5dYWKpwMDXYgNyp-bebidBHzZ_HWxHKE2O0EbXjmP7EHPsuOKLRvxDD8KCV5JPJ6v3-Cxzj5AHvjb-aBdbEc-xBwrbHpBf7Nh8cZSCUIqjblqieCBPsHb0x3bwVk6VS3h1hFelRDD4GNmv5FN411Z2o7qYWDP5uBnth9HwIDAQAB";
+    const RS256_SIGNATURE: &str = "fR_TMATj3cun1xWFS2J_xFhEsH2Z_nvCtHIOZcxOiHkdYfjK6giEQpJ3Bt86sasoABrsFY6CLHFbbGRCC8dWgmjH6sPAKC_TUp2GITwCXmkfd4Skt2x1HwtFRtYu1iI2WveGYKMumrXEmaEMm48ByUkN-9-PLNvSE-hEsBDc24Q-CYxZgtMyJYwkozhbCZ4x--JeVz4KThJaGWKGrlAgpCYumYjddAOsltph9TBfJgHVKCP3P1Gef-GvEicunwLSUAAK8DFAG389_eEo_4feqsQyq5vqWMfht-3qen3Lp2WuOWM2B7VvuV3sVzmJRF7E9Ki2yiByA57oR_DZLgoQLQ";
+    const CLIENT_DATA: &str = "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiTnpjM056YzNOemMzTnpjM056YzNOemMzTnpjM056YzNOemMzTnpjM056YyIsIm9yaWdpbiI6Imh0dHBzOi8vbWVtYmVycy5leGFtcGxlLmNvbSIsImNyb3NzT3JpZ2luIjpmYWxzZX0";
+    const AUTH_DATA: &str = "leYsRMNCJ-JFyvqdsXwKrGqZMvn-O703GI6Ai4-gykgdAAAAAA";
+
+    fn decode(value: &str) -> Vec<u8> {
+        passkey_types::encoding::try_from_base64url(value).unwrap()
+    }
+
+    fn case(
+        algorithm: COSEAlgorithm,
+        spki: &str,
+        signature: &str,
+    ) -> (PublicCredential, Assertion) {
+        let descriptor = PublicCredential {
+            community: "community".into(),
+            member: [17; 16],
+            credential_id: decode(CREDENTIAL_ID),
+            rp_id: "members.example.com".into(),
+            origins: vec!["https://members.example.com/".into()],
+            algorithm,
+            spki: decode(spki),
+            backup_eligible: true,
+        };
+        let assertion = Assertion {
+            credential_id: decode(CREDENTIAL_ID),
+            client_data_json: decode(CLIENT_DATA),
+            authenticator_data: decode(AUTH_DATA),
+            signature: decode(signature),
+            user_handle: Some(vec![17; 16]),
+        };
+        (descriptor, assertion)
+    }
+
+    #[test]
+    fn stored_assertions_keep_their_verdicts() {
+        for (algorithm, spki, signature) in [
+            (COSEAlgorithm::ES256, ES256_SPKI, ES256_SIGNATURE),
+            (COSEAlgorithm::RS256, RS256_SPKI, RS256_SIGNATURE),
+        ] {
+            let (descriptor, assertion) = case(algorithm, spki, signature);
+            assert!(verify(&descriptor, &assertion, [55; 32]).is_ok());
+            assert!(verify(&descriptor, &assertion, [56; 32]).is_err());
+            let mut flipped = assertion.clone();
+            let last = flipped.signature.len() - 1;
+            flipped.signature[last] ^= 1;
+            assert!(verify(&descriptor, &flipped, [55; 32]).is_err());
+            let mut truncated = assertion.clone();
+            truncated.signature.pop();
+            assert!(verify(&descriptor, &truncated, [55; 32]).is_err());
+            // A key of the other algorithm never verifies.
+            let mut swapped = descriptor.clone();
+            swapped.algorithm = if algorithm == COSEAlgorithm::ES256 {
+                COSEAlgorithm::RS256
+            } else {
+                COSEAlgorithm::ES256
+            };
+            assert!(verify(&swapped, &assertion, [55; 32]).is_err());
+        }
+        // An ES256 key off the curve is refused at parse time.
+        let (mut descriptor, assertion) = case(COSEAlgorithm::ES256, ES256_SPKI, ES256_SIGNATURE);
+        let last = descriptor.spki.len() - 1;
+        descriptor.spki[last] ^= 1;
+        assert!(verify(&descriptor, &assertion, [55; 32]).is_err());
+    }
+}
