@@ -33,7 +33,6 @@ ciborium = "0.2"
 webauthn-rs-proto = "0.5.5"
 p256 = { version = "0.14", default-features = false, features = ["ecdsa", "pkcs8", "std"] }
 ring = { version = "0.17", features = ["wasm32_unknown_unknown_js"] }
-pkcs1 = "0.8"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 coset = "0.3"

@@ -7,7 +7,18 @@
 
 use p256::{
     ecdsa::signature::Verifier,
-    pkcs8::{DecodePublicKey, SubjectPublicKeyInfoRef, der::Decode},
+    pkcs8::{
+        AlgorithmIdentifierRef, DecodePublicKey, ObjectIdentifier, SubjectPublicKeyInfoRef,
+        der::{Decode, asn1::AnyRef},
+    },
+};
+
+/// `rsaEncryption` with NULL parameters (RFC 8017 A.1): the SPKI algorithm of an RS256
+/// key. The same value as pkcs1's `ALGORITHM_ID`, kept here so ckyh does not pin a pkcs1
+/// release beside the rsa pre-releases other crates of the workspace resolve.
+const RSA_ENCRYPTION: AlgorithmIdentifierRef<'static> = AlgorithmIdentifierRef {
+    oid: ObjectIdentifier::new_unwrap("1.2.840.113549.1.1.1"),
+    parameters: Some(AnyRef::NULL),
 };
 use passkey_types::{
     crypto::sha256,
@@ -233,7 +244,7 @@ pub(crate) fn verify_bound(
         COSEAlgorithm::RS256 => {
             let key = SubjectPublicKeyInfoRef::from_der(&descriptor.spki)
                 .map_err(|_| InvalidAssertion)?;
-            if key.algorithm != pkcs1::ALGORITHM_ID {
+            if key.algorithm != RSA_ENCRYPTION {
                 return Err(InvalidAssertion);
             }
             let public_key = key.subject_public_key.as_bytes().ok_or(InvalidAssertion)?;
