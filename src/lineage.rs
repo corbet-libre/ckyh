@@ -20,10 +20,13 @@ const RSA_ENCRYPTION: AlgorithmIdentifierRef<'static> = AlgorithmIdentifierRef {
     oid: ObjectIdentifier::new_unwrap("1.2.840.113549.1.1.1"),
     parameters: Some(AnyRef::NULL),
 };
-use passkey_types::{
-    crypto::sha256,
-    ctap2::{AuthenticatorData, Flags},
-};
+use passkey_types::ctap2::{AuthenticatorData, Flags};
+use sha2::{Digest, Sha256};
+
+/// SHA-256 of `bytes` (passkey-types 0.6 no longer exports its helper).
+fn sha256(bytes: &[u8]) -> [u8; 32] {
+    Sha256::digest(bytes).into()
+}
 use serde::{Deserialize, Serialize};
 use webauthn_rs_proto::{COSEAlgorithm, CollectedClientData};
 

@@ -1,7 +1,10 @@
 use super::*;
 use passkey::{
-    authenticator::{Authenticator, UserCheck, UserValidationMethod, extensions::HmacSecretConfig},
+    authenticator::{
+        Authenticator, UiHint, UserCheck, UserValidationMethod, extensions::HmacSecretConfig,
+    },
     client::{Client, DefaultClientData},
+    crypto::AvailableBackend,
     types::{
         Passkey,
         ctap2::{Aaguid, Ctap2Error},
@@ -17,7 +20,7 @@ impl UserValidationMethod for User {
 
     async fn check_user<'a>(
         &self,
-        _credential: Option<&'a Passkey>,
+        _credential: UiHint<'a, Passkey>,
         _presence: bool,
         _verification: bool,
     ) -> Result<UserCheck, Ctap2Error> {
@@ -44,9 +47,13 @@ struct Software {
 
 impl Software {
     fn ceremony(&mut self, options: Json, create: bool, uv: bool, origin: &str) -> Json {
-        let mut authenticator =
-            Authenticator::new(Aaguid::new_empty(), self.credential.take(), User(uv))
-                .hmac_secret(HmacSecretConfig::new_with_uv_only().enable_on_make_credential());
+        let mut authenticator = Authenticator::new(
+            Aaguid::new_empty(),
+            self.credential.take(),
+            User(uv),
+            AvailableBackend,
+        )
+        .hmac_secret(HmacSecretConfig::new_with_uv_only().enable_on_make_credential());
         authenticator.set_make_credentials_with_signature_counter(true);
         let mut client = Client::new(authenticator);
         let origin = Url::parse(origin).unwrap();
@@ -444,6 +451,7 @@ fn upstream_cross_origin_registration_is_refused_even_at_an_allowed_vault_origin
         Aaguid::new_empty(),
         None::<Passkey>,
         User(true),
+        AvailableBackend,
     ));
     let response = tokio::runtime::Runtime::new()
         .unwrap()

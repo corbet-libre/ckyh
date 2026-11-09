@@ -28,17 +28,18 @@ tokio = { version = "1", features = ["rt-multi-thread"], optional = true }
 tracing = { version = "0.1", default-features = false, features = ["std"], optional = true }
 webauthn-rs = { version = "0.5.5", default-features = false, features = ["danger-credential-internals", "conditional-ui"], optional = true }
 webauthn-rs-core = { version = "0.5.5", optional = true }
-passkey-types = "0.4"
+passkey-types = "0.6"
+sha2 = "0.11"
 ciborium = "0.2"
 webauthn-rs-proto = "0.5.5"
 p256 = { version = "0.14", default-features = false, features = ["ecdsa", "pkcs8", "std"] }
 ring = { version = "0.17", features = ["wasm32_unknown_unknown_js"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
-coset = "0.3"
+coset = "0.4"
 openssl = "0.10"
 async-trait = "0.1"
-passkey = "0.4"
+passkey = { version = "0.6", features = ["rust-crypto"] }
 tempfile = "3"
 tracing-subscriber = { version = "0.3", features = ["registry"] }
 webauthn-authenticator-rs = { version = "0.5.5", default-features = false, features = ["softtoken"] }
