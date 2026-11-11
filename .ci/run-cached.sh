@@ -33,13 +33,6 @@ export CI_JOBS="${CI_JOBS:-2}" CARGO_BUILD_JOBS="${CI_JOBS:-2}"
 export RUST_TEST_THREADS="${CI_TEST_THREADS:-2}"
 export CARGO_NET_GIT_FETCH_WITH_CLI=true
 export CARGO_HTTP_USER_AGENT="${CARGO_HTTP_USER_AGENT:-dependency-ci}"
-# Append to any git config the verified runtime already supplies through the environment.
-git_config_base=${GIT_CONFIG_COUNT:-0}
-export GIT_CONFIG_COUNT=$((git_config_base + 2))
-export "GIT_CONFIG_KEY_$((git_config_base + 0))=url.https://git.corbet.ch/corbet-libs/.insteadOf"
-export "GIT_CONFIG_VALUE_$((git_config_base + 0))=https://github.com/corbet-libs/"
-export "GIT_CONFIG_KEY_$((git_config_base + 1))=url.https://git.corbet.ch/corbet-foss/.insteadOf"
-export "GIT_CONFIG_VALUE_$((git_config_base + 1))=https://github.com/corbet-foss/"
 # Share downloads while keeping proto's rustup proxies out of worker-owned bin/.
 exec 8>"$toolchains/install.lock"
 flock -w "${CI_TIMEOUT:-2700}" 8
