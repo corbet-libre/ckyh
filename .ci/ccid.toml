@@ -3,7 +3,18 @@ project = "ckyh"
 
 [checks.verify]
 kind = "commands"
-commands = [["bash", ".ci/verify.sh"]]
+fleet = true
+commands = [
+  ["ccid", "first-party"],
+  ["node", "--test", ".github/test-auto-merge.mjs"],
+  ["cargo", "fetch", "--locked"],
+  ["cargo", "fmt", "--check"],
+  ["cargo", "check", "--locked", "--no-default-features", "--lib"],
+  ["cargo", "test", "--locked", "--no-default-features", "--lib"],
+  ["cargo", "clippy", "--locked", "--all-targets", "--", "-D", "warnings"],
+  ["cargo", "test", "--locked"],
+  ["ccid", "coverage", "run"],
+]
 cache_tools = [["rustc", "-vV"], ["cargo", "--version"], ["node", "--version"], ["python3", "--version"], ["rustup", "run", "nightly", "rustc", "-vV"], ["rustup", "run", "nightly", "cargo", "llvm-cov", "--version"], ["pkg-config", "--version"], ["openssl", "version"], ["clang", "--version"]]
 cache_env = ["LIBCLANG_PATH", "PKG_CONFIG_PATH", "NIX_CFLAGS_COMPILE", "NIX_LDFLAGS", "LD_LIBRARY_PATH"]
 cache_outputs = ["coverage.json", "coverage.lcov", "coverage.txt"]
@@ -41,3 +52,129 @@ events = ["manual"]
 
 [security]
 dependencies = "cargo-deny"
+
+[coverage]
+
+[[coverage.exclusions]]
+file = "src/lib.rs"
+line = 166
+source = ".map_err(|_| Error::Configuration)?"
+reason = "The identical immutable RP/origin pair already passed the same deterministic upstream builder in the preceding loop."
+evidence = "docs/COVERAGE.md#repeated-origin-validation"
+targets = ["native"]
+
+[coverage.exclusions.evidence_sources]
+"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
+"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+
+[[coverage.exclusions]]
+file = "src/lib.rs"
+line = 271
+source = "return Err(Error::NotFound);"
+reason = "The owned authorizer returned by self.list already passed check_record with this exact RP; no intervening read or mutation occurs."
+evidence = "docs/COVERAGE.md#already-validated-authorizer-rp"
+targets = ["native"]
+
+[coverage.exclusions.evidence_sources]
+"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
+"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+
+[[coverage.exclusions]]
+file = "src/lib.rs"
+line = 300
+source = "return Err(Error::UserVerificationRequired);"
+reason = "Required UV was verified by the real upstream registration before a Credential is returned."
+evidence = "docs/COVERAGE.md#user-verification-after-upstream-verification"
+targets = ["native"]
+
+[coverage.exclusions.evidence_sources]
+"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
+"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+
+[[coverage.exclusions]]
+file = "src/lib.rs"
+line = 306
+source = ".map_err(|_| Error::VerificationFailed)?;"
+reason = "The same immutable CBOR and borrowed authData field already decoded successfully in upstream registration."
+evidence = "docs/COVERAGE.md#repeated-attestation-envelope-decoding"
+targets = ["native"]
+
+[coverage.exclusions.evidence_sources]
+"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
+"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+
+[[coverage.exclusions]]
+file = "src/lib.rs"
+line = 510
+source = "return Err(Error::UserVerificationRequired);"
+reason = "Both upstream authentication flows require and verify UV before returning the AuthenticationResult."
+evidence = "docs/COVERAGE.md#user-verification-after-upstream-verification"
+targets = ["native"]
+
+[coverage.exclusions.evidence_sources]
+"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
+"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+
+[[coverage.exclusions]]
+file = "src/lib.rs"
+line = 270
+source = "if authorizer.rp_id != self.rp_id {"
+reason = "The owned authorizer returned by self.list already passed check_record with this exact RP; no intervening read or mutation occurs."
+evidence = "docs/COVERAGE.md#already-validated-authorizer-rp"
+targets = ["native"]
+
+[coverage.exclusions.branch]
+block = 0
+id = 0
+
+[coverage.exclusions.evidence_sources]
+"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
+"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+
+[[coverage.exclusions]]
+file = "src/lib.rs"
+line = 299
+source = "if !credential.user_verified {"
+reason = "Required UV was verified by the real upstream registration before a Credential is returned."
+evidence = "docs/COVERAGE.md#user-verification-after-upstream-verification"
+targets = ["native"]
+
+[coverage.exclusions.branch]
+block = 0
+id = 0
+
+[coverage.exclusions.evidence_sources]
+"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
+"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+
+[[coverage.exclusions]]
+file = "src/lib.rs"
+line = 509
+source = "if !verified.user_verified() {"
+reason = "Both upstream authentication flows require and verify UV before returning the AuthenticationResult."
+evidence = "docs/COVERAGE.md#user-verification-after-upstream-verification"
+targets = ["native"]
+
+[coverage.exclusions.branch]
+block = 0
+id = 0
+
+[coverage.exclusions.evidence_sources]
+"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
+"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
