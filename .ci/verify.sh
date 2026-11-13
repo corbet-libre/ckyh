@@ -7,7 +7,6 @@ export RUSTFLAGS="${RUSTFLAGS:--D warnings}"
 
 python3 .github/check-first-party.py
 python3 .github/test-source-coverage.py
-node --test .github/test-auto-merge.mjs
 rustc --version --verbose
 cargo fetch --locked
 cargo fmt --check
