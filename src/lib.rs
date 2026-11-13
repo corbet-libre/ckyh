@@ -460,6 +460,9 @@ impl<S: CredentialStore> Passkeys<S> {
         })
     }
 
+    /// Complete account-first authentication: check the pending ceremony,
+    /// the response extensions, origin and user handle, then verify the
+    /// assertion and commit the new signature counter.
     pub fn finish_authentication(
         &self,
         pending: PendingAuthentication,
