@@ -63,10 +63,19 @@ evidence = "docs/COVERAGE.md#repeated-origin-validation"
 targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
+
+[coverage.exclusions.evidence_locked.webauthn-rs]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c548915e0e92ee946bbf2aecf01ea21bef53d974b0793cc6732ba81a03fc422"
+
+[coverage.exclusions.evidence_locked.webauthn-rs-core]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "296d2d501feb715d80b8e186fb88bab1073bca17f460303a1013d17b673bea6a"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -77,10 +86,19 @@ evidence = "docs/COVERAGE.md#already-validated-authorizer-rp"
 targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
+
+[coverage.exclusions.evidence_locked.webauthn-rs]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c548915e0e92ee946bbf2aecf01ea21bef53d974b0793cc6732ba81a03fc422"
+
+[coverage.exclusions.evidence_locked.webauthn-rs-core]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "296d2d501feb715d80b8e186fb88bab1073bca17f460303a1013d17b673bea6a"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -91,10 +109,19 @@ evidence = "docs/COVERAGE.md#user-verification-after-upstream-verification"
 targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
+
+[coverage.exclusions.evidence_locked.webauthn-rs]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c548915e0e92ee946bbf2aecf01ea21bef53d974b0793cc6732ba81a03fc422"
+
+[coverage.exclusions.evidence_locked.webauthn-rs-core]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "296d2d501feb715d80b8e186fb88bab1073bca17f460303a1013d17b673bea6a"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -105,10 +132,19 @@ evidence = "docs/COVERAGE.md#repeated-attestation-envelope-decoding"
 targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
+
+[coverage.exclusions.evidence_locked.webauthn-rs]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c548915e0e92ee946bbf2aecf01ea21bef53d974b0793cc6732ba81a03fc422"
+
+[coverage.exclusions.evidence_locked.webauthn-rs-core]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "296d2d501feb715d80b8e186fb88bab1073bca17f460303a1013d17b673bea6a"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -119,10 +155,19 @@ evidence = "docs/COVERAGE.md#user-verification-after-upstream-verification"
 targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
+
+[coverage.exclusions.evidence_locked.webauthn-rs]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c548915e0e92ee946bbf2aecf01ea21bef53d974b0793cc6732ba81a03fc422"
+
+[coverage.exclusions.evidence_locked.webauthn-rs-core]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "296d2d501feb715d80b8e186fb88bab1073bca17f460303a1013d17b673bea6a"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -137,10 +182,19 @@ block = 0
 id = 0
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
+
+[coverage.exclusions.evidence_locked.webauthn-rs]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c548915e0e92ee946bbf2aecf01ea21bef53d974b0793cc6732ba81a03fc422"
+
+[coverage.exclusions.evidence_locked.webauthn-rs-core]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "296d2d501feb715d80b8e186fb88bab1073bca17f460303a1013d17b673bea6a"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -155,10 +209,19 @@ block = 0
 id = 0
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
+
+[coverage.exclusions.evidence_locked.webauthn-rs]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c548915e0e92ee946bbf2aecf01ea21bef53d974b0793cc6732ba81a03fc422"
+
+[coverage.exclusions.evidence_locked.webauthn-rs-core]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "296d2d501feb715d80b8e186fb88bab1073bca17f460303a1013d17b673bea6a"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -173,7 +236,16 @@ block = 0
 id = 0
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
+
+[coverage.exclusions.evidence_locked.webauthn-rs]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c548915e0e92ee946bbf2aecf01ea21bef53d974b0793cc6732ba81a03fc422"
+
+[coverage.exclusions.evidence_locked.webauthn-rs-core]
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "296d2d501feb715d80b8e186fb88bab1073bca17f460303a1013d17b673bea6a"
