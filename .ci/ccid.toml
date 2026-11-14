@@ -64,7 +64,7 @@ targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
-"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests.rs" = "b54e7c5b314d229da1be84ed0d789e3b90e3504be1c7c1d6c0b665ce843adf43"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [coverage.exclusions.evidence_locked.webauthn-rs]
@@ -87,7 +87,7 @@ targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
-"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests.rs" = "b54e7c5b314d229da1be84ed0d789e3b90e3504be1c7c1d6c0b665ce843adf43"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [coverage.exclusions.evidence_locked.webauthn-rs]
@@ -110,7 +110,7 @@ targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
-"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests.rs" = "b54e7c5b314d229da1be84ed0d789e3b90e3504be1c7c1d6c0b665ce843adf43"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [coverage.exclusions.evidence_locked.webauthn-rs]
@@ -133,7 +133,7 @@ targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
-"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests.rs" = "b54e7c5b314d229da1be84ed0d789e3b90e3504be1c7c1d6c0b665ce843adf43"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [coverage.exclusions.evidence_locked.webauthn-rs]
@@ -156,7 +156,7 @@ targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
-"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests.rs" = "b54e7c5b314d229da1be84ed0d789e3b90e3504be1c7c1d6c0b665ce843adf43"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [coverage.exclusions.evidence_locked.webauthn-rs]
@@ -183,7 +183,7 @@ id = 0
 
 [coverage.exclusions.evidence_sources]
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
-"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests.rs" = "b54e7c5b314d229da1be84ed0d789e3b90e3504be1c7c1d6c0b665ce843adf43"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [coverage.exclusions.evidence_locked.webauthn-rs]
@@ -210,7 +210,7 @@ id = 0
 
 [coverage.exclusions.evidence_sources]
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
-"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests.rs" = "b54e7c5b314d229da1be84ed0d789e3b90e3504be1c7c1d6c0b665ce843adf43"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [coverage.exclusions.evidence_locked.webauthn-rs]
@@ -237,7 +237,7 @@ id = 0
 
 [coverage.exclusions.evidence_sources]
 "src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
-"src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
+"src/tests.rs" = "b54e7c5b314d229da1be84ed0d789e3b90e3504be1c7c1d6c0b665ce843adf43"
 "src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [coverage.exclusions.evidence_locked.webauthn-rs]

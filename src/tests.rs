@@ -1,6 +1,7 @@
 use super::*;
 mod certificate;
 mod lineage;
+mod origin;
 mod wallet_certificate;
 use std::collections::{BTreeSet, HashMap};
 use std::sync::Mutex;
