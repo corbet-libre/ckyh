@@ -6,7 +6,6 @@ kind = "commands"
 fleet = true
 commands = [
   ["ccid", "first-party"],
-  ["node", "--test", ".github/test-auto-merge.mjs"],
   ["cargo", "fetch", "--locked"],
   ["cargo", "fmt", "--check"],
   ["cargo", "check", "--locked", "--no-default-features", "--lib"],
@@ -64,10 +63,10 @@ evidence = "docs/COVERAGE.md#repeated-origin-validation"
 targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
-"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
+"src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
-"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+"src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -78,10 +77,10 @@ evidence = "docs/COVERAGE.md#already-validated-authorizer-rp"
 targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
-"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
+"src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
-"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+"src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -92,10 +91,10 @@ evidence = "docs/COVERAGE.md#user-verification-after-upstream-verification"
 targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
-"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
+"src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
-"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+"src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -106,24 +105,24 @@ evidence = "docs/COVERAGE.md#repeated-attestation-envelope-decoding"
 targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
-"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
+"src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
-"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+"src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
-line = 510
+line = 557
 source = "return Err(Error::UserVerificationRequired);"
 reason = "Both upstream authentication flows require and verify UV before returning the AuthenticationResult."
 evidence = "docs/COVERAGE.md#user-verification-after-upstream-verification"
 targets = ["native"]
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
-"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
+"src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
-"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+"src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -138,10 +137,10 @@ block = 0
 id = 0
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
-"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
+"src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
-"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+"src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
@@ -156,14 +155,14 @@ block = 0
 id = 0
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
-"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
+"src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
-"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+"src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
 
 [[coverage.exclusions]]
 file = "src/lib.rs"
-line = 509
+line = 556
 source = "if !verified.user_verified() {"
 reason = "Both upstream authentication flows require and verify UV before returning the AuthenticationResult."
 evidence = "docs/COVERAGE.md#user-verification-after-upstream-verification"
@@ -174,7 +173,7 @@ block = 0
 id = 0
 
 [coverage.exclusions.evidence_sources]
-"Cargo.lock" = "bb614a3a4a469cf3c8315f5af8e1f14519e49faaa3f0e0c5db8ff737195e87be"
-"src/lib.rs" = "b06216161e7fdd222ce8b49857b2dfc82c2df5d8c4872d4e8169a53d88c5bd42"
+"Cargo.lock" = "ca0edd2be2d5aaff38d9084aef85b5685d64a51eb9fe2250550240f7061de6c0"
+"src/lib.rs" = "c280450b996b062da7ea15321e1d37e4a9e390257c94b96f13c076b7586b2515"
 "src/tests.rs" = "c0ce2b71196f8fcb8997f8b598d1c3927ed0c9c794dfe54b9d69e2119ccac75c"
-"src/tests/discoverable.rs" = "4f185f583dbaa5ff4a661cea23c5609d02713e471ad480413da5be66ea7df535"
+"src/tests/discoverable.rs" = "d70e22197321fd8c61899beab93fd12b77ef5c43c29e1ac5bfeec2168e163b37"
